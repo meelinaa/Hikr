@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             xmlns:ios="clr-namespace:Microsoft.Maui.Controls.PlatformConfiguration.iOSSpecific;assembly=Microsoft.Maui.Controls"
+             xmlns:views="clr-namespace:Hikr.Views"
+             ios:Page.UseSafeArea="False"
+             x:Class="Hikr.Views.ShellHostPage">
+
+    <ContentPage.Behaviors>
+        <toolkit:StatusBarBehavior StatusBarColor="Transparent" StatusBarStyle="DarkContent" />
+    </ContentPage.Behaviors>
+
+    <Grid>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- PAGE CONTENT – alle Views gestapelt                    -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <views:MapPageView   x:Name="viewMap"       IsVisible="True"  />
+        <views:ExplorePage   x:Name="viewExplore"   IsVisible="False" />
+        <views:FavoritesPage x:Name="viewFavorites" IsVisible="False" />
+        <views:ProfilePage   x:Name="viewProfile"   IsVisible="False" />
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- BURGER BUTTON – Frosted Glass, oben links              -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <Border x:Name="burgerBtn"
+                VerticalOptions="Start" HorizontalOptions="Start"
+                Margin="16,50,0,0"
+                WidthRequest="46" HeightRequest="46"
+                BackgroundColor="#C8FFFFFF" Stroke="#80FFFFFF" StrokeThickness="1">
+            <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+            <Border.Shadow><Shadow Brush="Black" Offset="0,4" Radius="12" Opacity="0.14" /></Border.Shadow>
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnBurgerTapped" />
+            </Border.GestureRecognizers>
+            <Label Text="☰" FontSize="20" TextColor="#1A1A2E"
+                   HorizontalOptions="Center" VerticalOptions="Center" />
+        </Border>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- DIM OVERLAY – für Drawer                               -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <Grid x:Name="dimOverlay" IsVisible="False" BackgroundColor="#60000000">
+            <Grid.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnDimOverlayTapped" />
+            </Grid.GestureRecognizers>
+        </Grid>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- DRAWER PANEL                                           -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <Border x:Name="drawerPanel"
+                HorizontalOptions="Start" VerticalOptions="Fill"
+                WidthRequest="290"
+                BackgroundColor="#F4F7FA" Stroke="#20000000" StrokeThickness="1">
+            <Border.StrokeShape><RoundRectangle CornerRadius="0,24,24,0" /></Border.StrokeShape>
+            <Border.Shadow><Shadow Brush="Black" Offset="6,0" Radius="30" Opacity="0.18" /></Border.Shadow>
+
+            <Grid RowDefinitions="Auto, *, Auto">
+
+                <!-- Header -->
+                <Grid Grid.Row="0" Padding="20,56,20,16">
+                    <HorizontalStackLayout Spacing="12" VerticalOptions="Center">
+                        <Border WidthRequest="40" HeightRequest="40"
+                                BackgroundColor="#18000000" Stroke="#20000000" StrokeThickness="1">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="12" /></Border.StrokeShape>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnDrawerCloseTapped" />
+                            </Border.GestureRecognizers>
+                            <Label Text="☰" FontSize="18" TextColor="#1A1A2E"
+                                   HorizontalOptions="Center" VerticalOptions="Center" />
+                        </Border>
+                        <VerticalStackLayout Spacing="0" VerticalOptions="Center">
+                            <Label Text="Hikr" FontSize="22" FontAttributes="Bold" TextColor="#1A1A2E" />
+                            <Label Text="Dein Wanderbegleiter" FontSize="11" TextColor="#66000000" />
+                        </VerticalStackLayout>
+                    </HorizontalStackLayout>
+                    <BoxView Color="#12000000" HeightRequest="1" HorizontalOptions="Fill" VerticalOptions="End" />
+                </Grid>
+
+                <!-- Nav Items -->
+                <VerticalStackLayout Grid.Row="1" Padding="16,24,16,0" Spacing="4">
+
+                    <Border x:Name="drawerItemMap" BackgroundColor="#1AE8501A"
+                            Stroke="Transparent" StrokeThickness="0" HeightRequest="58" Padding="16,0">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="16" /></Border.StrokeShape>
+                        <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnDrawerNavMap" /></Border.GestureRecognizers>
+                        <HorizontalStackLayout Spacing="16" VerticalOptions="Center">
+                            <Label x:Name="drawerIconMap" Text="🗺️" FontSize="22" VerticalOptions="Center" />
+                            <Label x:Name="drawerLabelMap" Text="Karte" FontSize="16"
+                                   FontAttributes="Bold" TextColor="#E8501A" VerticalOptions="Center" />
+                        </HorizontalStackLayout>
+                    </Border>
+
+                    <Border x:Name="drawerItemExplore" BackgroundColor="Transparent"
+                            Stroke="Transparent" StrokeThickness="0" HeightRequest="58" Padding="16,0">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="16" /></Border.StrokeShape>
+                        <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnDrawerNavExplore" /></Border.GestureRecognizers>
+                        <HorizontalStackLayout Spacing="16" VerticalOptions="Center">
+                            <Label x:Name="drawerIconExplore" Text="🧭" FontSize="22" Opacity="0.45" VerticalOptions="Center" />
+                            <Label x:Name="drawerLabelExplore" Text="Entdecken" FontSize="16"
+                                   TextColor="#44000000" VerticalOptions="Center" />
+                        </HorizontalStackLayout>
+                    </Border>
+
+                    <Border x:Name="drawerItemFavorites" BackgroundColor="Transparent"
+                            Stroke="Transparent" StrokeThickness="0" HeightRequest="58" Padding="16,0">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="16" /></Border.StrokeShape>
+                        <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnDrawerNavFavorites" /></Border.GestureRecognizers>
+                        <HorizontalStackLayout Spacing="16" VerticalOptions="Center">
+                            <Label x:Name="drawerIconFavorites" Text="❤️" FontSize="22" Opacity="0.45" VerticalOptions="Center" />
+                            <Label x:Name="drawerLabelFavorites" Text="Favoriten" FontSize="16"
+                                   TextColor="#44000000" VerticalOptions="Center" />
+                        </HorizontalStackLayout>
+                    </Border>
+
+                    <Border x:Name="drawerItemProfile" BackgroundColor="Transparent"
+                            Stroke="Transparent" StrokeThickness="0" HeightRequest="58" Padding="16,0">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="16" /></Border.StrokeShape>
+                        <Border.GestureRecognizers><TapGestureRecognizer Tapped="OnDrawerNavProfile" /></Border.GestureRecognizers>
+                        <HorizontalStackLayout Spacing="16" VerticalOptions="Center">
+                            <Label x:Name="drawerIconProfile" Text="👤" FontSize="22" Opacity="0.45" VerticalOptions="Center" />
+                            <Label x:Name="drawerLabelProfile" Text="Profil" FontSize="16"
+                                   TextColor="#44000000" VerticalOptions="Center" />
+                        </HorizontalStackLayout>
+                    </Border>
+
+                </VerticalStackLayout>
+
+                <!-- Footer -->
+                <Grid Grid.Row="2" Padding="20,0,20,40">
+                    <BoxView Color="#12000000" HeightRequest="1" HorizontalOptions="Fill" VerticalOptions="Start" />
+                    <Border BackgroundColor="#12E74C3C" Stroke="Transparent" StrokeThickness="0"
+                            HeightRequest="52" Padding="16,0" Margin="0,12,0,0">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                        <HorizontalStackLayout Spacing="14" VerticalOptions="Center">
+                            <Label Text="⚙️" FontSize="20" Opacity="0.6" VerticalOptions="Center" />
+                            <Label Text="Einstellungen" FontSize="15" TextColor="#44000000" VerticalOptions="Center" />
+                        </HorizontalStackLayout>
+                    </Border>
+                </Grid>
+
+            </Grid>
+        </Border>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- SUCH-OVERLAY – voller Bildschirm, über allem           -->
+        <!-- Erscheint wenn Such-Pill getippt wird                  -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <Grid x:Name="searchOverlay" IsVisible="False" BackgroundColor="#F5F7FA">
+
+            <Grid RowDefinitions="Auto, Auto, 1, *">
+
+                <!-- ─── ROW 0: KOPF – Zurück + Suche + Löschen ─────── -->
+                <Grid Grid.Row="0"
+                      ColumnDefinitions="Auto, *, Auto, Auto"
+                      Padding="16,54,16,8"
+                      ColumnSpacing="10">
+
+                    <!-- Zurück-Button -->
+                    <Border Grid.Column="0"
+                            BackgroundColor="#E8EAED" Stroke="Transparent" StrokeThickness="0"
+                            WidthRequest="44" HeightRequest="44">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="13" /></Border.StrokeShape>
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnSearchClose" />
+                        </Border.GestureRecognizers>
+                        <Label Text="←" FontSize="22" FontAttributes="Bold"
+                               TextColor="#1A1A2E" HorizontalOptions="Center" VerticalOptions="Center" />
+                    </Border>
+
+                    <!-- Suchfeld -->
+                    <Border Grid.Column="1"
+                            BackgroundColor="White" Stroke="#E0E3E8" StrokeThickness="1"
+                            HeightRequest="44">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="13" /></Border.StrokeShape>
+                        <Border.Shadow><Shadow Brush="Black" Offset="0,2" Radius="8" Opacity="0.07" /></Border.Shadow>
+                        <Entry x:Name="searchOverlayEntry"
+                               Placeholder="Hier suchen..."
+                               PlaceholderColor="#88000000"
+                               TextColor="#1A1A2E"
+                               FontSize="16"
+                               BackgroundColor="Transparent"
+                               ReturnType="Search"
+                               Margin="14,0"
+                               TextChanged="OnSearchTextChanged" />
+                    </Border>
+
+                    <!-- Wander-Switch -->
+                    <HorizontalStackLayout Grid.Column="2" Spacing="4" VerticalOptions="Center">
+                        <Label Text="🥾" FontSize="18" VerticalOptions="Center" />
+                        <Switch IsToggled="{Binding BindingContext.IsHikingModeActive, Source={x:Reference viewMap}}"
+                                Visual="Material" VerticalOptions="Center" />
+                    </HorizontalStackLayout>
+
+                    <!-- Löschen-Button (nur wenn Text vorhanden) -->
+                    <Border Grid.Column="3"
+                            x:Name="searchClearBtn"
+                            IsVisible="False"
+                            BackgroundColor="#E8EAED" Stroke="Transparent" StrokeThickness="0"
+                            WidthRequest="44" HeightRequest="44">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="13" /></Border.StrokeShape>
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Tapped="OnSearchClear" />
+                        </Border.GestureRecognizers>
+                        <Label Text="✕" FontSize="14" FontAttributes="Bold"
+                               TextColor="#66000000" HorizontalOptions="Center" VerticalOptions="Center" />
+                    </Border>
+
+                </Grid>
+
+                <!-- ─── ROW 1: SCHNELLZUGRIFF ────────────────────────── -->
+                <ScrollView Grid.Row="1"
+                            Orientation="Horizontal"
+                            HorizontalScrollBarVisibility="Never"
+                            Padding="16,4,16,12">
+                    <HorizontalStackLayout Spacing="10">
+
+                        <!-- Zuhause -->
+                        <Border BackgroundColor="White" Stroke="#E8EAED" StrokeThickness="1"
+                                HeightRequest="62" Padding="12,8" MinimumWidthRequest="110">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnShortcutZuhauseTapped" />
+                            </Border.GestureRecognizers>
+                            <HorizontalStackLayout Spacing="10" VerticalOptions="Center">
+                                <Border BackgroundColor="#E3F2FD" WidthRequest="34" HeightRequest="34" Stroke="Transparent" StrokeThickness="0">
+                                    <Border.StrokeShape><RoundRectangle CornerRadius="17" /></Border.StrokeShape>
+                                    <Label Text="🏠" FontSize="16" HorizontalOptions="Center" VerticalOptions="Center" />
+                                </Border>
+                                <VerticalStackLayout Spacing="1" VerticalOptions="Center">
+                                    <Label Text="Zuhause" FontSize="13" FontAttributes="Bold" TextColor="#1A1A2E" />
+                                    <Label Text="Kölnische Str..." FontSize="10" TextColor="#66000000" />
+                                </VerticalStackLayout>
+                            </HorizontalStackLayout>
+                        </Border>
+
+                        <!-- Arbeit -->
+                        <Border BackgroundColor="White" Stroke="#E8EAED" StrokeThickness="1"
+                                HeightRequest="62" Padding="12,8" MinimumWidthRequest="110">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Tapped="OnShortcutArbeitTapped" />
+                            </Border.GestureRecognizers>
+                            <HorizontalStackLayout Spacing="10" VerticalOptions="Center">
+                                <Border BackgroundColor="#E8F5E9" WidthRequest="34" HeightRequest="34" Stroke="Transparent" StrokeThickness="0">
+                                    <Border.StrokeShape><RoundRectangle CornerRadius="17" /></Border.StrokeShape>
+                                    <Label Text="💼" FontSize="16" HorizontalOptions="Center" VerticalOptions="Center" />
+                                </Border>
+                                <VerticalStackLayout Spacing="1" VerticalOptions="Center">
+                                    <Label Text="Arbeit" FontSize="13" FontAttributes="Bold" TextColor="#1A1A2E" />
+                                    <Label Text="Landfelder Str..." FontSize="10" TextColor="#66000000" />
+                                </VerticalStackLayout>
+                            </HorizontalStackLayout>
+                        </Border>
+
+                        <!-- Mehr -->
+                        <Border BackgroundColor="White" Stroke="#E8EAED" StrokeThickness="1"
+                                HeightRequest="62" Padding="12,8">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                            <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
+                                <Border BackgroundColor="#F0F2F5" WidthRequest="34" HeightRequest="34" Stroke="Transparent" StrokeThickness="0">
+                                    <Border.StrokeShape><RoundRectangle CornerRadius="17" /></Border.StrokeShape>
+                                    <Label Text="···" FontSize="14" TextColor="#66000000"
+                                           HorizontalOptions="Center" VerticalOptions="Center" />
+                                </Border>
+                                <Label Text="Mehr" FontSize="13" TextColor="#1A1A2E" VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                        </Border>
+
+                    </HorizontalStackLayout>
+                </ScrollView>
+
+                <!-- ─── ROW 2: TRENNLINIE ─────────────────────────────── -->
+                <BoxView Grid.Row="2" Color="#10000000" />
+
+                <!-- ─── ROW 3: INHALT – Verlauf ODER Ergebnisse ──────── -->
+                <Grid Grid.Row="3">
+
+                    <!-- VERLAUF (Standard, wenn kein Text) -->
+                    <Grid x:Name="historyPanel" RowDefinitions="Auto, *, Auto" IsVisible="True">
+
+                        <!-- Header "Zuletzt gesucht" -->
+                        <Grid Grid.Row="0" Padding="16,14,16,8" ColumnDefinitions="*, Auto">
+                            <Label Grid.Column="0"
+                                   Text="Zuletzt gesucht"
+                                   FontSize="14" FontAttributes="Bold" TextColor="#1A1A2E" />
+                            <Label Grid.Column="1"
+                                   Text="ⓘ" FontSize="16" TextColor="#88000000"
+                                   VerticalOptions="Center" />
+                        </Grid>
+
+                        <!-- Verlaufsliste -->
+                        <CollectionView Grid.Row="1"
+                                        x:Name="historyList"
+                                        SelectionMode="Single"
+                                        SelectionChanged="OnHistoryItemSelected">
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid RowDefinitions="*, 1" Padding="0">
+                                        <Grid Grid.Row="0" Padding="16,12,16,12"
+                                              ColumnDefinitions="52, *">
+                                            <!-- Icon-Kreis + Entfernung -->
+                                            <VerticalStackLayout Grid.Column="0"
+                                                                 Spacing="2"
+                                                                 HorizontalOptions="Center"
+                                                                 VerticalOptions="Center">
+                                                <Border BackgroundColor="#EEF0F3"
+                                                        WidthRequest="40" HeightRequest="40"
+                                                        HorizontalOptions="Center"
+                                                        Stroke="Transparent" StrokeThickness="0">
+                                                    <Border.StrokeShape><RoundRectangle CornerRadius="20" /></Border.StrokeShape>
+                                                    <Label Text="{Binding Icon}" FontSize="18"
+                                                           HorizontalOptions="Center" VerticalOptions="Center" />
+                                                </Border>
+                                                <Label Text="{Binding DistanceText}"
+                                                       FontSize="9" TextColor="#66000000"
+                                                       HorizontalOptions="Center"
+                                                       IsVisible="{Binding HasDistance}" />
+                                            </VerticalStackLayout>
+                                            <!-- Text -->
+                                            <VerticalStackLayout Grid.Column="1"
+                                                                 VerticalOptions="Center" Spacing="2">
+                                                <Label Text="{Binding PrimaryText}"
+                                                       FontSize="14" TextColor="#1A1A2E"
+                                                       LineBreakMode="TailTruncation" />
+                                                <Label Text="{Binding SecondaryText}"
+                                                       FontSize="11" TextColor="#66000000"
+                                                       LineBreakMode="TailTruncation"
+                                                       IsVisible="{Binding HasSubtitle}" />
+                                            </VerticalStackLayout>
+                                        </Grid>
+                                        <!-- Trennlinie -->
+                                        <BoxView Grid.Row="1" Color="#08000000" HeightRequest="1"
+                                                 Margin="68,0,0,0" />
+                                    </Grid>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+
+                        <!-- "Mehr aus Verlauf"-Link -->
+                        <Border Grid.Row="2" BackgroundColor="Transparent"
+                                Padding="16,12" Margin="0,0,0,20">
+                            <Label Text="Mehr aus meinem Verlauf"
+                                   FontSize="14" FontAttributes="Bold"
+                                   TextColor="#1B72E8"
+                                   HorizontalOptions="Center" />
+                        </Border>
+                    </Grid>
+
+                    <!-- SUCHERGEBNISSE (wenn Text eingegeben) -->
+                    <CollectionView x:Name="searchResultsList"
+                                    IsVisible="False"
+                                    SelectionMode="Single"
+                                    SelectionChanged="OnSearchResultSelected">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid RowDefinitions="*, 1" Padding="0">
+                                    <Grid Grid.Row="0" Padding="16,12,16,12"
+                                          ColumnDefinitions="56, *, Auto">
+                                        <!-- Icon + Entfernung -->
+                                        <VerticalStackLayout Grid.Column="0"
+                                                             Spacing="2"
+                                                             HorizontalOptions="Center"
+                                                             VerticalOptions="Center">
+                                            <Border BackgroundColor="#EEF0F3"
+                                                    WidthRequest="40" HeightRequest="40"
+                                                    HorizontalOptions="Center"
+                                                    Stroke="Transparent" StrokeThickness="0">
+                                                <Border.StrokeShape><RoundRectangle CornerRadius="20" /></Border.StrokeShape>
+                                                <Label Text="{Binding Icon}" FontSize="18"
+                                                       HorizontalOptions="Center" VerticalOptions="Center" />
+                                            </Border>
+                                            <Label Text="{Binding DistanceText}"
+                                                   FontSize="9" TextColor="#66000000"
+                                                   HorizontalOptions="Center" />
+                                        </VerticalStackLayout>
+                                        <!-- Primär- und Sekundärtext -->
+                                        <VerticalStackLayout Grid.Column="1"
+                                                             VerticalOptions="Center" Spacing="2">
+                                            <Label Text="{Binding PrimaryText}"
+                                                   FontSize="14" FontAttributes="Bold"
+                                                   TextColor="#1A1A2E"
+                                                   LineBreakMode="TailTruncation" />
+                                            <Label Text="{Binding SecondaryText}"
+                                                   FontSize="11" TextColor="#66000000"
+                                                   LineBreakMode="TailTruncation"
+                                                   IsVisible="{Binding HasSubtitle}" />
+                                        </VerticalStackLayout>
+                                        <!-- Pfeil -->
+                                        <Label Grid.Column="2"
+                                               Text="↗" FontSize="15" TextColor="#88000000"
+                                               VerticalOptions="Center" Margin="8,0,0,0" />
+                                    </Grid>
+                                    <!-- Trennlinie -->
+                                    <BoxView Grid.Row="1" Color="#08000000" HeightRequest="1"
+                                             Margin="72,0,0,0" />
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+
+                </Grid>
+
+            </Grid>
+        </Grid>
+
+    </Grid>
+</ContentPage>

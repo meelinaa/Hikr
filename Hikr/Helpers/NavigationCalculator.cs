@@ -51,16 +51,33 @@ public static class NavigationCalculator
     }
 
     /// <summary>
+    /// Calculates the geographic distance between two WGS84 coordinates in meters.
+    /// </summary>
+    public static double HaversineDistanceMeters(double lat1, double lon1, double lat2, double lon2)
+    {
+        const double earthRadius = 6371000;
+        double dLat = (lat2 - lat1) * Math.PI / 180.0;
+        double dLon = (lon2 - lon1) * Math.PI / 180.0;
+        double a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                   Math.Cos(lat1 * Math.PI / 180.0) * Math.Cos(lat2 * Math.PI / 180.0) *
+                   Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+        return earthRadius * 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+    }
+
+    /// <summary>
     /// Formats route distance in meters to a human-readable string.
     /// </summary>
-    public static string FormatDistance(double distanceMeters)
+    public static string FormatDistance(double distanceMeters, bool useGermanFormat = false)
     {
         if (distanceMeters < 1000)
         {
             return $"{(int)Math.Round(distanceMeters)} m";
         }
+
         double km = distanceMeters / 1000.0;
-        return $"{km:F1} km";
+        return useGermanFormat
+            ? $"{km.ToString("F1", System.Globalization.CultureInfo.GetCultureInfo("de-DE"))} km"
+            : $"{km:F1} km";
     }
 
     /// <summary>

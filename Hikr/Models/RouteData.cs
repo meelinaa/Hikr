@@ -21,4 +21,9 @@ public class RouteData
     /// Gets or sets the total route duration in seconds.
     /// </summary>
     public double Duration { get; set; }
+
+    /// <summary>
+    /// Gets or sets the list of navigation steps for this route.
+    /// </summary>
+    public List<NavigationStep> Steps { get; set; } = new();
 }

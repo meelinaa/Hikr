@@ -55,8 +55,9 @@ public class RoutingService
 
         string overview = isEstimate ? "false" : "full";
         string alternatives = isEstimate ? "false" : "true";
+        string steps = isEstimate ? "false" : "true";
 
-        return $"https://routing.openstreetmap.de/{subDomain}/route/v1/{profile}/{startCoords};{destCoords}?overview={overview}&geometries=geojson&alternatives={alternatives}";
+        return $"https://routing.openstreetmap.de/{subDomain}/route/v1/{profile}/{startCoords};{destCoords}?overview={overview}&geometries=geojson&alternatives={alternatives}&steps={steps}";
     }
 
     /// <summary>
@@ -106,11 +107,44 @@ public class RoutingService
                             double distance = route.TryGetProperty("distance", out var distProp) ? distProp.GetDouble() : 0;
                             double duration = route.TryGetProperty("duration", out var durProp) ? durProp.GetDouble() : 0;
 
+                            var navSteps = new List<NavigationStep>();
+                            if (route.TryGetProperty("legs", out var legs) && legs.GetArrayLength() > 0)
+                            {
+                                foreach (var leg in legs.EnumerateArray())
+                                {
+                                    if (leg.TryGetProperty("steps", out var stepsArray))
+                                    {
+                                        foreach (var step in stepsArray.EnumerateArray())
+                                        {
+                                            var navStep = new NavigationStep();
+                                            navStep.Distance = step.TryGetProperty("distance", out var dProp) ? dProp.GetDouble() : 0;
+                                            navStep.Duration = step.TryGetProperty("duration", out var durP) ? durP.GetDouble() : 0;
+                                            navStep.StreetName = step.TryGetProperty("name", out var nProp) ? nProp.GetString() ?? "" : "";
+                                            
+                                            if (step.TryGetProperty("maneuver", out var maneuver))
+                                            {
+                                                navStep.ManeuverType = maneuver.TryGetProperty("type", out var mtProp) ? mtProp.GetString() ?? "" : "";
+                                                navStep.ManeuverModifier = maneuver.TryGetProperty("modifier", out var mmProp) ? mmProp.GetString() ?? "" : "";
+                                                if (maneuver.TryGetProperty("location", out var loc) && loc.GetArrayLength() >= 2)
+                                                {
+                                                    double locLon = loc[0].GetDouble();
+                                                    double locLat = loc[1].GetDouble();
+                                                    var locMercator = SphericalMercator.FromLonLat(locLon, locLat);
+                                                    navStep.Location = new MPoint(locMercator.x, locMercator.y);
+                                                }
+                                            }
+                                            navSteps.Add(navStep);
+                                        }
+                                    }
+                                }
+                            }
+
                             routesList.Add(new RouteData
                             {
                                 Feature = routeFeature,
                                 Distance = distance,
-                                Duration = duration
+                                Duration = duration,
+                                Steps = navSteps
                             });
                         }
                     }

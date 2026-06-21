@@ -13,6 +13,7 @@ using Hikr.Helpers;
 using Hikr.Models;
 using Hikr.Services;
 using Hikr.Core;
+using Microsoft.Maui.ApplicationModel;
 
 namespace Hikr.ViewModels;
 
@@ -24,9 +25,23 @@ public class MainViewModel : BaseViewModel
     private readonly GeocodingService _geocodingService;
     private readonly RoutingService _routingService;
     private readonly GpsService _gpsService;
+    private readonly OverpassHikingService _overpassHikingService;
     private CancellationTokenSource? _searchCts;
     private bool _isSelectingSuggestion;
     private double _compassHeading;
+    private string? _countryCode;
+
+    // Hiking specific private fields
+    private bool _isHikingModeActive;
+    private double _searchRadiusKm = 5;
+    private string _customRadiusText = string.Empty;
+    private bool _showWaymarkedTrails;
+    private HikingRouteModel? _selectedHikingRoute;
+    private bool _isHikingDetailPanelVisible;
+    private bool _isHikingModalVisible;
+    private List<KeyValuePair<string, string>> _hikingRouteTags = new();
+    private readonly List<HikingRouteModel> _ambientHikingRoutes = new();
+    private MPoint? _lastFetchPosition;
 
     // View state fields
     private string _searchBarText = string.Empty;
@@ -109,6 +124,12 @@ public class MainViewModel : BaseViewModel
     /// </summary>
     public event Action<MPoint>? GpsPositionUpdated;
 
+    // Hiking specific events
+    public event Action? HikingModeChanged;
+    public event Action? RadiusCircleChanged;
+    public event Action<List<HikingRouteModel>>? HikingRoutesLoaded;
+    public event Action<HikingRouteModel?>? SelectedHikingRouteChanged;
+
     /// <summary>
     /// Initializes a new instance of the MainViewModel class.
     /// </summary>
@@ -116,6 +137,7 @@ public class MainViewModel : BaseViewModel
     {
         _geocodingService = new GeocodingService(httpClient);
         _routingService = new RoutingService(httpClient);
+        _overpassHikingService = new OverpassHikingService(httpClient);
         
         _gpsService = new GpsService();
         _gpsService.CompassReadingChanged += (heading) => CompassHeading = heading;
@@ -135,6 +157,14 @@ public class MainViewModel : BaseViewModel
         SwapLocationsCommand = new RelayCommand(execute: async () => await ExecuteSwapLocationsAsync());
         StartEntryFocusedCommand = new RelayCommand(execute: () => ActiveSearchField = "start");
         DestinationEntryFocusedCommand = new RelayCommand(execute: () => ActiveSearchField = "destination");
+
+        ToggleHikingModeCommand = new RelayCommand(execute: ToggleHikingMode);
+        SetRadiusCommand = new RelayCommand<double>(execute: SetRadius);
+        ToggleWaymarkedTrailsCommand = new RelayCommand(execute: ToggleWaymarkedTrails);
+        SelectHikingRouteCommand = new RelayCommand<HikingRouteModel>(execute: SelectHikingRoute);
+        StartHikingRouteCommand = new RelayCommand(execute: async () => await ExecuteStartHikingRouteAsync());
+        ShowMoreHikingDetailsCommand = new RelayCommand(execute: ShowMoreHikingDetails);
+        CloseHikingModalCommand = new RelayCommand(execute: CloseHikingModal);
     }
 
     // Public Commands
@@ -152,12 +182,130 @@ public class MainViewModel : BaseViewModel
     public ICommand StartEntryFocusedCommand { get; }
     public ICommand DestinationEntryFocusedCommand { get; }
 
+    // Hiking specific commands
+    public ICommand ToggleHikingModeCommand { get; }
+    public ICommand SetRadiusCommand { get; }
+    public ICommand ToggleWaymarkedTrailsCommand { get; }
+    public ICommand SelectHikingRouteCommand { get; }
+    public ICommand StartHikingRouteCommand { get; }
+    public ICommand ShowMoreHikingDetailsCommand { get; }
+    public ICommand CloseHikingModalCommand { get; }
+
     // State properties with Change Notifications
     public double CompassHeading
     {
         get => _compassHeading;
         set => SetProperty(ref _compassHeading, value);
     }
+
+    // Hiking specific public properties
+    public bool IsHikingModeActive
+    {
+        get => _isHikingModeActive;
+        set
+        {
+            if (SetProperty(ref _isHikingModeActive, value))
+            {
+                HikingModeChanged?.Invoke();
+                RadiusCircleChanged?.Invoke();
+                if (value)
+                {
+                    _ = FetchAmbientHikingRoutesAsync();
+                }
+                else
+                 {
+                    _ambientHikingRoutes.Clear();
+                    SelectedHikingRoute = null;
+                    HikingRoutesLoaded?.Invoke(_ambientHikingRoutes);
+                }
+            }
+        }
+    }
+
+    public double SearchRadiusKm
+    {
+        get => _searchRadiusKm;
+        set
+        {
+            if (SetProperty(ref _searchRadiusKm, value))
+            {
+                RadiusCircleChanged?.Invoke();
+                if (IsHikingModeActive)
+                {
+                    _ = FetchAmbientHikingRoutesAsync();
+                }
+            }
+        }
+    }
+
+    public string CustomRadiusText
+    {
+        get => _customRadiusText;
+        set
+        {
+            if (SetProperty(ref _customRadiusText, value))
+            {
+                if (double.TryParse(value, out var parsedKm) && parsedKm > 0)
+                {
+                    SearchRadiusKm = parsedKm;
+                }
+            }
+        }
+    }
+
+    public bool ShowWaymarkedTrails
+    {
+        get => _showWaymarkedTrails;
+        set
+        {
+            if (SetProperty(ref _showWaymarkedTrails, value))
+            {
+                OnPropertyChanged(nameof(ShowWaymarkedTrails));
+            }
+        }
+    }
+
+    public HikingRouteModel? SelectedHikingRoute
+    {
+        get => _selectedHikingRoute;
+        set
+        {
+            if (SetProperty(ref _selectedHikingRoute, value))
+            {
+                SelectedHikingRouteChanged?.Invoke(value);
+                if (value != null)
+                {
+                    PlaceTitle = value.Name;
+                    PlaceSubtitle = value.GetFormattedDistance();
+                    IsHikingDetailPanelVisible = true;
+                }
+                else
+                {
+                    IsHikingDetailPanelVisible = false;
+                }
+            }
+        }
+    }
+
+    public bool IsHikingDetailPanelVisible
+    {
+        get => _isHikingDetailPanelVisible;
+        set => SetProperty(ref _isHikingDetailPanelVisible, value);
+    }
+
+    public bool IsHikingModalVisible
+    {
+        get => _isHikingModalVisible;
+        set => SetProperty(ref _isHikingModalVisible, value);
+    }
+
+    public List<KeyValuePair<string, string>> HikingRouteTags
+    {
+        get => _hikingRouteTags;
+        set => SetProperty(ref _hikingRouteTags, value);
+    }
+
+    public List<HikingRouteModel> AmbientHikingRoutes => _ambientHikingRoutes;
 
     public string SearchBarText
     {
@@ -325,7 +473,11 @@ public class MainViewModel : BaseViewModel
     public MPoint? StartPosition
     {
         get => _startPosition;
-        set => SetProperty(ref _startPosition, value);
+        set
+        {
+            if (SetProperty(ref _startPosition, value))
+                _ = EnsureCountryCodeAsync(value);
+        }
     }
 
     public MPoint? DestinationPosition
@@ -346,12 +498,22 @@ public class MainViewModel : BaseViewModel
         set => SetProperty(ref _activeSearchField, value);
     }
 
+    private RouteData? _selectedRoute;
+
+    public RouteData? SelectedRoute
+    {
+        get => _selectedRoute;
+        set => SetProperty(ref _selectedRoute, value);
+    }
+
     public List<RouteData> CurrentRoutes => _currentRoutes;
     public List<MPoint> RoutePoints => _routePoints;
     public string CurrentTransportMode => _currentTransportMode;
 
     // Viewbox callback supplied by View to restrict Nominatim results to screen viewport
     public Func<string>? ViewboxProvider { get; set; }
+
+    private DateTime _lastRerouteTime = DateTime.MinValue;
 
     /// <summary>
     /// Processes coordinate and guidance calculation updates when background GPS position ticks.
@@ -363,6 +525,16 @@ public class MainViewModel : BaseViewModel
         if (isUsingGpsStart)
         {
             _startPosition = mapsuiPosition;
+            _ = EnsureCountryCodeAsync(mapsuiPosition);
+        }
+
+        if (IsHikingModeActive && _startPosition != null)
+        {
+            if (_lastFetchPosition == null || NavigationCalculator.Distance(_lastFetchPosition, _startPosition) > 500)
+            {
+                _lastFetchPosition = _startPosition;
+                _ = FetchAmbientHikingRoutesAsync();
+            }
         }
 
         if (_destinationPosition != null && isRoutingPanelVisible)
@@ -373,6 +545,28 @@ public class MainViewModel : BaseViewModel
         if (IsInNavigationMode && _startPosition != null)
         {
             UpdateNavigationGuidance();
+
+            // Check if user strayed from route for automatic rerouting
+            if (_routePoints.Count >= 2)
+            {
+                double minDistance = double.MaxValue;
+                for (int i = 0; i < _routePoints.Count; i++)
+                {
+                    double dist = NavigationCalculator.Distance(_startPosition, _routePoints[i]);
+                    if (dist < minDistance)
+                    {
+                        minDistance = dist;
+                    }
+                }
+
+                // minDistance is in Mercator meters. Threshold of 100 (approx 50-70 real meters depending on latitude).
+                // Throttle rerouting to max once every 10 seconds.
+                if (minDistance > 100 && (DateTime.UtcNow - _lastRerouteTime).TotalSeconds > 10)
+                {
+                    _lastRerouteTime = DateTime.UtcNow;
+                    await BerechneUndZeigeRouteAsync(false);
+                }
+            }
         }
 
         GpsPositionUpdated?.Invoke(mapsuiPosition);
@@ -404,6 +598,7 @@ public class MainViewModel : BaseViewModel
 
         if (_currentRoutes.Count > 0)
         {
+            SelectedRoute = _currentRoutes[0];
             RoutesCalculated?.Invoke(_currentRoutes, shouldZoom);
         }
     }
@@ -413,6 +608,7 @@ public class MainViewModel : BaseViewModel
     /// </summary>
     public void SelectRoute(RouteData selectedRoute)
     {
+        SelectedRoute = selectedRoute;
         RouteDurationText = NavigationCalculator.FormatDuration(selectedRoute.Duration) + $" ({NavigationCalculator.FormatDistance(selectedRoute.Distance)})";
         RouteModeIcon = GetTransportIcon(GetOsrmProfile());
     }
@@ -422,7 +618,8 @@ public class MainViewModel : BaseViewModel
     /// </summary>
     public void UpdateNavigationGuidance()
     {
-        if (_routePoints.Count < 2 || _startPosition == null) return;
+        var activeRoute = _selectedRoute ?? (_currentRoutes.Count > 0 ? _currentRoutes[0] : null);
+        if (activeRoute == null || _routePoints.Count < 2 || _startPosition == null) return;
 
         int closestIndex = 0;
         double minDistance = double.MaxValue;
@@ -453,11 +650,7 @@ public class MainViewModel : BaseViewModel
             }
         }
 
-        double distanceMeters = 0;
-        if (totalMercatorLength > 0 && _currentRoutes.Count > 0)
-        {
-            distanceMeters = (remainingMercatorLength / totalMercatorLength) * _currentRoutes[0].Distance;
-        }
+        double distanceMeters = totalMercatorLength > 0 ? (remainingMercatorLength / totalMercatorLength) * activeRoute.Distance : 0;
 
         NavDistanceLeftText = NavigationCalculator.FormatDistance(distanceMeters) + " verbleibend";
         
@@ -472,52 +665,68 @@ public class MainViewModel : BaseViewModel
         double durationSeconds = distanceMeters / speedMps;
         NavTimeLeftText = NavigationCalculator.FormatDuration(durationSeconds) + " verbleibend";
 
-        string instruction = "Dem Straßenverlauf folgen";
-        string emoji = "⬆️";
+        NavigationStep? upcomingStep = null;
         double nextTurnDistMeters = distanceMeters;
-
-        int searchLimit = Math.Min(closestIndex + 25, _routePoints.Count);
-        double distToTurn = 0;
         
-        if (closestIndex < _routePoints.Count - 1)
+        if (activeRoute.Steps != null && activeRoute.Steps.Count > 0)
         {
-            distToTurn += NavigationCalculator.Distance(_startPosition, _routePoints[closestIndex + 1]);
+            for (int s = 0; s < activeRoute.Steps.Count; s++)
+            {
+                var step = activeRoute.Steps[s];
+                if (step.Location == null) continue;
+                
+                int stepIndex = 0;
+                double minStepDist = double.MaxValue;
+                for (int i = 0; i < _routePoints.Count; i++)
+                {
+                    double d = NavigationCalculator.Distance(step.Location, _routePoints[i]);
+                    if (d < minStepDist)
+                    {
+                        minStepDist = d;
+                        stepIndex = i;
+                    }
+                }
+                
+                if (stepIndex > closestIndex && (step.ManeuverType != "depart" || s > 0))
+                {
+                    double distToStep = 0;
+                    if (closestIndex < _routePoints.Count - 1)
+                    {
+                        distToStep += NavigationCalculator.Distance(_startPosition, _routePoints[closestIndex + 1]);
+                        for (int i = closestIndex + 1; i < stepIndex; i++)
+                        {
+                            distToStep += NavigationCalculator.Distance(_routePoints[i], _routePoints[i + 1]);
+                        }
+                    }
+                    
+                    if (totalMercatorLength > 0)
+                    {
+                        nextTurnDistMeters = (distToStep / totalMercatorLength) * activeRoute.Distance;
+                    }
+                    else
+                    {
+                        nextTurnDistMeters = distToStep * 0.62;
+                    }
+                    
+                    upcomingStep = step;
+                    break;
+                }
+            }
+            
+            if (upcomingStep == null)
+            {
+                upcomingStep = activeRoute.Steps[^1];
+                nextTurnDistMeters = distanceMeters;
+            }
         }
 
-        for (int i = closestIndex + 1; i < searchLimit - 1; i++)
+        string instruction = "Dem Straßenverlauf folgen";
+        string emoji = "⬆️";
+
+        if (upcomingStep != null)
         {
-            distToTurn += NavigationCalculator.Distance(_routePoints[i], _routePoints[i + 1]);
-            
-            double b1 = NavigationCalculator.Bearing(_routePoints[i - 1], _routePoints[i]);
-            double b2 = NavigationCalculator.Bearing(_routePoints[i], _routePoints[i + 1]);
-            double diff = b2 - b1;
-            
-            while (diff > 180) diff -= 360;
-            while (diff < -180) diff += 360;
-
-            if (Math.Abs(diff) > 25)
-            {
-                if (totalMercatorLength > 0 && _currentRoutes.Count > 0)
-                {
-                    nextTurnDistMeters = (distToTurn / totalMercatorLength) * _currentRoutes[0].Distance;
-                }
-                else
-                {
-                    nextTurnDistMeters = distToTurn * 0.62;
-                }
-
-                if (diff < 0)
-                {
-                    instruction = "Links abbiegen";
-                    emoji = "⬅️";
-                }
-                else
-                {
-                    instruction = "Rechts abbiegen";
-                    emoji = "➡️";
-                }
-                break;
-            }
+            instruction = upcomingStep.FormattedInstruction;
+            emoji = upcomingStep.Emoji;
         }
 
         if (closestIndex >= _routePoints.Count - 2 || distanceMeters < 15)
@@ -532,13 +741,16 @@ public class MainViewModel : BaseViewModel
         NavDistanceText = nextTurnDistMeters > 0 ? $"In {(int)nextTurnDistMeters} Metern" : "Ziel erreicht";
     }
 
+
+
     private async Task ExecuteSearchAsync(string query)
     {
         if (string.IsNullOrWhiteSpace(query)) return;
         IsSuggestionsListVisible = false;
 
         string viewbox = ViewboxProvider?.Invoke() ?? string.Empty;
-        var list = await _geocodingService.SearchAddressAsync(query, viewbox, CancellationToken.None);
+        await EnsureCountryCodeAsync(_startPosition);
+        var list = await _geocodingService.SearchAddressAsync(query, viewbox, _countryCode, CancellationToken.None);
         if (list.Count > 0)
         {
             var target = list[0];
@@ -585,9 +797,10 @@ public class MainViewModel : BaseViewModel
             _startPosition = SphericalMercator.FromLonLat(9.4797, 51.3127).ToMPoint();
         }
 
-        var nameParts = gewaehlterOrt.DisplayName.Split(',');
-        PlaceTitle = nameParts[0].Trim();
-        PlaceSubtitle = nameParts.Length > 1 ? string.Join(",", nameParts.Skip(1)).Trim() : "Keine Detailadresse";
+        PlaceTitle = gewaehlterOrt.GetPrimaryLabel();
+        PlaceSubtitle = gewaehlterOrt.GetSecondaryLabel();
+        if (string.IsNullOrWhiteSpace(PlaceSubtitle))
+            PlaceSubtitle = "Keine Detailadresse";
 
         var profile = GetOsrmProfile();
         string durationText = await EstimateTravelTimeAsync(_startPosition, _destinationPosition, profile);
@@ -686,7 +899,8 @@ public class MainViewModel : BaseViewModel
         IsInNavigationMode = true;
 
         _routePoints.Clear();
-        if (_currentRoutes.Count > 0 && _currentRoutes[0].Feature.Geometry is LineString lineString)
+        var activeRoute = _selectedRoute ?? (_currentRoutes.Count > 0 ? _currentRoutes[0] : null);
+        if (activeRoute != null && activeRoute.Feature.Geometry is LineString lineString)
         {
             foreach (var coord in lineString.Coordinates)
             {
@@ -723,6 +937,60 @@ public class MainViewModel : BaseViewModel
             RecenterNavRequested?.Invoke();
             UpdateNavigationGuidance();
         }
+    }
+
+    public async Task HandleMapLongClickAsync(double lat, double lon)
+    {
+        if (_destinationPosition != null) return;
+
+        var targetPosition = SphericalMercator.FromLonLat(lon, lat).ToMPoint();
+        
+        NominatimResult? resolvedPlace = null;
+        try
+        {
+            resolvedPlace = await _geocodingService.ReverseGeocodeAsync(lat, lon, CancellationToken.None);
+        }
+        catch {}
+
+        if (resolvedPlace == null)
+        {
+            var latString = lat.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var lonString = lon.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            resolvedPlace = new NominatimResult
+            {
+                Name = "Markierter Ort",
+                DisplayName = $"{lat:F4}, {lon:F4}",
+                Lat = latString,
+                Lon = lonString
+            };
+        }
+
+        _destinationPosition = targetPosition;
+
+        if (_startPosition == null)
+        {
+            _startPosition = SphericalMercator.FromLonLat(9.4797, 51.3127).ToMPoint();
+        }
+
+        PlaceTitle = resolvedPlace.GetPrimaryLabel();
+        PlaceSubtitle = resolvedPlace.GetSecondaryLabel();
+        if (string.IsNullOrWhiteSpace(PlaceSubtitle))
+            PlaceSubtitle = "Keine Detailadresse";
+
+        var profile = GetOsrmProfile();
+        string durationText = await EstimateTravelTimeAsync(_startPosition, _destinationPosition, profile);
+        PlaceDurationText = $"{GetTransportIcon(profile)} {durationText}";
+
+        IsSingleSearchPanelVisible = false;
+        IsPlaceDetailPanelVisible = false;
+        IsRoutingPanelVisible = true;
+        IsRouteInfoPanelVisible = true;
+
+        DestinationEntryText = PlaceTitle;
+
+        DestinationSet?.Invoke(targetPosition, resolvedPlace);
+
+        await BerechneUndZeigeRouteAsync(true);
     }
 
     private void ExecuteGPSButtonClicked()
@@ -774,6 +1042,29 @@ public class MainViewModel : BaseViewModel
             return;
         }
 
+        if (IsHikingModeActive)
+        {
+            var filtered = _ambientHikingRoutes
+                .Where(r => r.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
+                .Select(route => {
+                    var centroid = route.Geometry.Centroid;
+                    var (lon, lat) = SphericalMercator.ToLonLat(centroid.X, centroid.Y);
+                    return new NominatimResult
+                    {
+                        DisplayName = $"{route.Name} ({route.GetFormattedDistance()})",
+                        Name = route.Name,
+                        Lat = lat.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                        Lon = lon.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                        Class = "route",
+                        Type = "hiking"
+                    };
+                }).ToList();
+
+            Suggestions = filtered;
+            IsSuggestionsListVisible = filtered.Count > 0;
+            return;
+        }
+
         _searchCts?.Cancel();
         _searchCts = new CancellationTokenSource();
         var token = _searchCts.Token;
@@ -782,14 +1073,28 @@ public class MainViewModel : BaseViewModel
         {
             await Task.Delay(400, token);
             string viewbox = ViewboxProvider?.Invoke() ?? string.Empty;
-            var list = await _geocodingService.SearchAddressAsync(query, viewbox, token);
-            
+            await EnsureCountryCodeAsync(_startPosition);
+            var list = await _geocodingService.SearchAddressAsync(query, viewbox, _countryCode, token);
+
             if (!token.IsCancellationRequested)
             {
-                Suggestions = list;
-                IsSuggestionsListVisible = list.Count > 0;
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                {
+                    if (token.IsCancellationRequested) return;
+                    Suggestions = list;
+                    IsSuggestionsListVisible = list.Count > 0;
+                });
             }
         });
+    }
+
+    private async Task EnsureCountryCodeAsync(MPoint? position)
+    {
+        if (!string.IsNullOrEmpty(_countryCode) || position == null)
+            return;
+
+        var (lon, lat) = SphericalMercator.ToLonLat(position.X, position.Y);
+        _countryCode = await _geocodingService.ReverseGeocodeCountryCodeAsync(lat, lon, CancellationToken.None);
     }
 
     private void OnStartEntryTextChanged(string query)
@@ -826,12 +1131,17 @@ public class MainViewModel : BaseViewModel
         {
             await Task.Delay(400, token);
             string viewbox = ViewboxProvider?.Invoke() ?? string.Empty;
-            var list = await _geocodingService.SearchAddressAsync(query, viewbox, token);
-            
+            await EnsureCountryCodeAsync(_startPosition);
+            var list = await _geocodingService.SearchAddressAsync(query, viewbox, _countryCode, token);
+
             if (!token.IsCancellationRequested)
             {
-                RoutingSuggestions = list;
-                IsRoutingSuggestionsListVisible = list.Count > 0;
+                await MainThread.InvokeOnMainThreadAsync(() =>
+                {
+                    if (token.IsCancellationRequested) return;
+                    RoutingSuggestions = list;
+                    IsRoutingSuggestionsListVisible = list.Count > 0;
+                });
             }
         });
     }
@@ -857,5 +1167,126 @@ public class MainViewModel : BaseViewModel
             "foot" => "🚶",
             _ => "🚶"
         };
+    }
+
+    // Hiking command and helper implementations
+    public void ToggleHikingMode()
+    {
+        IsHikingModeActive = !IsHikingModeActive;
+    }
+
+    private void SetRadius(double radiusKm)
+    {
+        SearchRadiusKm = radiusKm;
+    }
+
+    private void ToggleWaymarkedTrails()
+    {
+        ShowWaymarkedTrails = !ShowWaymarkedTrails;
+    }
+
+    private void SelectHikingRoute(HikingRouteModel? route)
+    {
+        SelectedHikingRoute = route;
+    }
+
+    private async Task ExecuteStartHikingRouteAsync()
+    {
+        if (SelectedHikingRoute == null || _startPosition == null) return;
+        
+        _currentTransportMode = "hike";
+        OnPropertyChanged(nameof(CurrentTransportMode));
+
+        // 1. Find the point on the hiking route closest to the user's current position
+        Coordinate closestCoord = SelectedHikingRoute.Geometry.Coordinates[0];
+        double minDistance = double.MaxValue;
+        foreach (var coord in SelectedHikingRoute.Geometry.Coordinates)
+        {
+            double dist = NavigationCalculator.Distance(_startPosition, new MPoint(coord.X, coord.Y));
+            if (dist < minDistance)
+            {
+                minDistance = dist;
+                closestCoord = coord;
+            }
+        }
+
+        var closestMPoint = new MPoint(closestCoord.X, closestCoord.Y);
+
+        // 2. Calculate the connecting route from user position to the hiking path
+        var connectionRoutes = await _routingService.CalculateRouteAsync(_startPosition, closestMPoint, "foot");
+
+        // 3. Combine connection route coordinates and hiking route coordinates
+        var combinedCoords = new List<Coordinate>();
+        double totalDistance = SelectedHikingRoute.CalculatedDistanceMeters;
+
+        if (connectionRoutes != null && connectionRoutes.Count > 0 && connectionRoutes[0].Feature.Geometry != null)
+        {
+            combinedCoords.AddRange(connectionRoutes[0].Feature.Geometry.Coordinates);
+            totalDistance += connectionRoutes[0].Distance;
+        }
+
+        combinedCoords.AddRange(SelectedHikingRoute.Geometry.Coordinates);
+
+        var geometryFactory = new NetTopologySuite.Geometries.GeometryFactory();
+        var combinedLineString = geometryFactory.CreateLineString(combinedCoords.ToArray());
+
+        var combinedFeature = new Mapsui.Nts.GeometryFeature
+        {
+            Geometry = combinedLineString
+        };
+
+        // 4. Set as the active route and clear other ambient hiking routes
+        _currentRoutes.Clear();
+        var routeData = new RouteData
+        {
+            Feature = combinedFeature,
+            Distance = totalDistance,
+            Duration = totalDistance / 1.1 // Pedestrian speed roughly 4 km/h (1.1 m/s)
+        };
+        _currentRoutes.Add(routeData);
+
+        // 5. Hide/clear all other ambient hiking routes from map
+        _ambientHikingRoutes.Clear();
+        HikingRoutesLoaded?.Invoke(_ambientHikingRoutes);
+
+        var centroid = SelectedHikingRoute.Geometry.Centroid;
+        _destinationPosition = new MPoint(centroid.X, centroid.Y);
+        
+        IsHikingDetailPanelVisible = false;
+        IsSingleSearchPanelVisible = false;
+        
+        ExecuteStartNavigation();
+    }
+
+    private void ShowMoreHikingDetails()
+    {
+        if (SelectedHikingRoute == null) return;
+        
+        var tagsList = SelectedHikingRoute.Tags
+            .Select(t => new KeyValuePair<string, string>(t.Key, t.Value))
+            .ToList();
+            
+        HikingRouteTags = tagsList;
+        IsHikingModalVisible = true;
+    }
+
+    private void CloseHikingModal()
+    {
+        IsHikingModalVisible = false;
+    }
+
+    public async Task FetchAmbientHikingRoutesAsync()
+    {
+        if (_startPosition == null) return;
+        
+        var (lon, lat) = SphericalMercator.ToLonLat(_startPosition.X, _startPosition.Y);
+        double radiusMeters = SearchRadiusKm * 1000.0;
+        
+        var routes = await _overpassHikingService.FetchRoutesAroundLocationAsync(lat, lon, radiusMeters, CancellationToken.None);
+        
+        _ambientHikingRoutes.Clear();
+        _ambientHikingRoutes.AddRange(routes);
+        
+        HikingRoutesLoaded?.Invoke(_ambientHikingRoutes);
     }
 }

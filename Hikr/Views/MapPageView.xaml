@@ -1,0 +1,585 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:mapsui="clr-namespace:Mapsui.UI.Maui;assembly=Mapsui.UI.Maui"
+             x:Class="Hikr.Views.MapPageView">
+
+    <Grid>
+        <mapsui:MapControl
+            x:Name="mapView"
+            VerticalOptions="Fill"
+            HorizontalOptions="Fill" />
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- 1. SUCHLEISTE – Frosted Glass                          -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <Border x:Name="singleSearchPanel"
+                VerticalOptions="Start"
+                HorizontalOptions="Fill"
+                Margin="80,16,16,0"
+                BackgroundColor="#C8FFFFFF"
+                Stroke="#80FFFFFF"
+                StrokeThickness="1"
+                HeightRequest="54"
+                IsVisible="{Binding IsSingleSearchPanelVisible}">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="27" />
+            </Border.StrokeShape>
+            <Border.Shadow>
+                <Shadow Brush="#1A000000" Offset="0,8" Radius="24" Opacity="0.18" />
+            </Border.Shadow>
+            <Border.GestureRecognizers>
+                <TapGestureRecognizer Tapped="OnSearchPillTapped" />
+            </Border.GestureRecognizers>
+            <Grid ColumnDefinitions="45, *" Padding="12,0,12,0" VerticalOptions="Center">
+                <Label Grid.Column="0" Text="🔍" FontSize="20"
+                       HorizontalOptions="Center" VerticalOptions="Center" />
+                <Label Grid.Column="1"
+                       Text="Hier suchen..."
+                       TextColor="#88000000"
+                       FontSize="16"
+                       VerticalOptions="Center" />
+            </Grid>
+        </Border>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- RADIUS-SUCHE – Frosted Glass (Sichtbar im Wandermodus) -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <Border x:Name="radiusSearchPanel"
+                VerticalOptions="Start"
+                HorizontalOptions="Fill"
+                Margin="80,78,16,0"
+                BackgroundColor="#D8FFFFFF"
+                Stroke="#60FFFFFF"
+                StrokeThickness="1.5"
+                HeightRequest="56"
+                IsVisible="{Binding IsHikingModeActive}">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="18" />
+            </Border.StrokeShape>
+            <Border.Shadow>
+                <Shadow Brush="#1A000000" Offset="0,6" Radius="18" Opacity="0.15" />
+            </Border.Shadow>
+            <Grid ColumnDefinitions="*, 80" Padding="12,0,12,0" VerticalOptions="Center">
+                <HorizontalStackLayout Grid.Column="0" Spacing="8" VerticalOptions="Center">
+                    <Label Text="📏 Radius:" TextColor="#1A1A2E" FontSize="13" FontAttributes="Bold" VerticalOptions="Center" />
+                    <!-- Chips for 5 km, 10 km, 20 km, 50 km, 100 km -->
+                    <Button Text="5 km" Command="{Binding SetRadiusCommand}" CommandParameter="{x:Double 5}"
+                            HeightRequest="30" FontSize="11" CornerRadius="15" BackgroundColor="#2ECC71" TextColor="White" Padding="8,0" />
+                    <Button Text="10 km" Command="{Binding SetRadiusCommand}" CommandParameter="{x:Double 10}"
+                            HeightRequest="30" FontSize="11" CornerRadius="15" BackgroundColor="#E8EAED" TextColor="#1A1A2E" Padding="8,0" />
+                    <Button Text="20 km" Command="{Binding SetRadiusCommand}" CommandParameter="{x:Double 20}"
+                            HeightRequest="30" FontSize="11" CornerRadius="15" BackgroundColor="#E8EAED" TextColor="#1A1A2E" Padding="8,0" />
+                    <Button Text="50 km" Command="{Binding SetRadiusCommand}" CommandParameter="{x:Double 50}"
+                            HeightRequest="30" FontSize="11" CornerRadius="15" BackgroundColor="#E8EAED" TextColor="#1A1A2E" Padding="8,0" />
+                    <Button Text="100 km" Command="{Binding SetRadiusCommand}" CommandParameter="{x:Double 100}"
+                            HeightRequest="30" FontSize="11" CornerRadius="15" BackgroundColor="#E8EAED" TextColor="#1A1A2E" Padding="8,0" />
+                </HorizontalStackLayout>
+                <Border Grid.Column="1" BackgroundColor="#15000000" Stroke="Transparent" HeightRequest="32" Padding="4,0" VerticalOptions="Center">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="8" /></Border.StrokeShape>
+                    <Entry Placeholder="km..." Text="{Binding CustomRadiusText}" Keyboard="Numeric"
+                           TextColor="#1A1A2E" FontSize="11" HorizontalTextAlignment="Center" VerticalOptions="Center" BackgroundColor="Transparent" />
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- 2. ROUTING-PANEL – Frosted Glass                       -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <Border x:Name="routingPanel"
+                VerticalOptions="Start"
+                HorizontalOptions="Fill"
+                Margin="16,25,16,10"
+                BackgroundColor="#C8FFFFFF"
+                Stroke="#80FFFFFF"
+                StrokeThickness="1"
+                IsVisible="{Binding IsRoutingPanelVisible}">
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="20" />
+            </Border.StrokeShape>
+            <Border.Shadow>
+                <Shadow Brush="Black" Offset="0,8" Radius="24" Opacity="0.14" />
+            </Border.Shadow>
+            <VerticalStackLayout Padding="12" Spacing="10">
+                <Grid ColumnDefinitions="40, *, 40"
+                      RowDefinitions="Auto, Auto"
+                      ColumnSpacing="10" RowSpacing="8">
+                    <Button Grid.Row="0" Grid.Column="0" Grid.RowSpan="2"
+                            Text="←" FontAttributes="Bold" FontSize="18"
+                            TextColor="#1A1A2E" BackgroundColor="Transparent"
+                            BorderWidth="0" Command="{Binding ExitRoutingCommand}" />
+                    <Border Grid.Row="0" Grid.Column="1"
+                            BackgroundColor="#18000000" Stroke="#30FFFFFF"
+                            StrokeThickness="1" HeightRequest="36">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                        <Entry x:Name="startEntry"
+                               Placeholder="Startpunkt wählen..."
+                               Text="{Binding StartEntryText, Mode=TwoWay}"
+                               TextColor="#1A1A2E" PlaceholderColor="#88000000"
+                               FontSize="14" BackgroundColor="Transparent"
+                               Focused="OnStartEntryFocused" />
+                    </Border>
+                    <Border Grid.Row="1" Grid.Column="1"
+                            BackgroundColor="#18000000" Stroke="#30FFFFFF"
+                            StrokeThickness="1" HeightRequest="36">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="10" /></Border.StrokeShape>
+                        <Entry x:Name="destinationEntry"
+                               Placeholder="Zielort..."
+                               Text="{Binding DestinationEntryText, Mode=TwoWay}"
+                               TextColor="#1A1A2E" PlaceholderColor="#88000000"
+                               FontSize="14" BackgroundColor="Transparent"
+                               Focused="OnDestinationEntryFocused" />
+                    </Border>
+                    <Button Grid.Row="0" Grid.Column="2" Grid.RowSpan="2"
+                            Text="⇅" FontSize="20" TextColor="#1A1A2E"
+                            BackgroundColor="Transparent"
+                            Command="{Binding SwapLocationsCommand}" />
+                </Grid>
+                <CollectionView x:Name="routingSuggestionsList"
+                                IsVisible="{Binding IsRoutingSuggestionsListVisible}"
+                                ItemsSource="{Binding RoutingSuggestions}"
+                                MaximumHeightRequest="200" Margin="0"
+                                SelectionMode="Single"
+                                SelectionChanged="OnRoutingSuggestionSelectionChanged">
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Padding="12,8">
+                                <Label Text="{Binding DisplayName}"
+                                       TextColor="#1A1A2E" FontSize="14"
+                                       LineBreakMode="TailTruncation" />
+                            </Grid>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+                <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never" Margin="0,4,0,0">
+                    <HorizontalStackLayout Spacing="8">
+                        <Border BackgroundColor="#22000000" Stroke="#30FFFFFF" StrokeThickness="1" HeightRequest="36">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="18" /></Border.StrokeShape>
+                            <Border.Triggers>
+                                <DataTrigger TargetType="Border" Binding="{Binding CurrentTransportMode}" Value="car">
+                                    <Setter Property="BackgroundColor" Value="#CC1B72E8" />
+                                    <Setter Property="Stroke" Value="#60FFFFFF" />
+                                </DataTrigger>
+                            </Border.Triggers>
+                            <Button x:Name="btnModeAuto" Text="🚗 Auto"
+                                    Command="{Binding TransportModeCommand}" CommandParameter="car"
+                                    HeightRequest="36" BackgroundColor="Transparent"
+                                    TextColor="#1A1A2E" FontSize="12" Padding="14,0">
+                                <Button.Triggers>
+                                    <DataTrigger TargetType="Button" Binding="{Binding CurrentTransportMode}" Value="car">
+                                        <Setter Property="TextColor" Value="White" />
+                                        <Setter Property="FontAttributes" Value="Bold" />
+                                    </DataTrigger>
+                                </Button.Triggers>
+                            </Button>
+                        </Border>
+                        <Border BackgroundColor="#22000000" Stroke="#30FFFFFF" StrokeThickness="1" HeightRequest="36">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="18" /></Border.StrokeShape>
+                            <Border.Triggers>
+                                <DataTrigger TargetType="Border" Binding="{Binding CurrentTransportMode}" Value="bike">
+                                    <Setter Property="BackgroundColor" Value="#CC1B72E8" />
+                                    <Setter Property="Stroke" Value="#60FFFFFF" />
+                                </DataTrigger>
+                            </Border.Triggers>
+                            <Button x:Name="btnModeBike" Text="🚲 Rad"
+                                    Command="{Binding TransportModeCommand}" CommandParameter="bike"
+                                    HeightRequest="36" BackgroundColor="Transparent"
+                                    TextColor="#1A1A2E" FontSize="12" Padding="14,0">
+                                <Button.Triggers>
+                                    <DataTrigger TargetType="Button" Binding="{Binding CurrentTransportMode}" Value="bike">
+                                        <Setter Property="TextColor" Value="White" />
+                                        <Setter Property="FontAttributes" Value="Bold" />
+                                    </DataTrigger>
+                                </Button.Triggers>
+                            </Button>
+                        </Border>
+                        <Border BackgroundColor="#22000000" Stroke="#30FFFFFF" StrokeThickness="1" HeightRequest="36">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="18" /></Border.StrokeShape>
+                            <Border.Triggers>
+                                <DataTrigger TargetType="Border" Binding="{Binding CurrentTransportMode}" Value="foot">
+                                    <Setter Property="BackgroundColor" Value="#CC1B72E8" />
+                                    <Setter Property="Stroke" Value="#60FFFFFF" />
+                                </DataTrigger>
+                            </Border.Triggers>
+                            <Button x:Name="btnModeFoot" Text="🚶 Fuß"
+                                    Command="{Binding TransportModeCommand}" CommandParameter="foot"
+                                    HeightRequest="36" BackgroundColor="Transparent"
+                                    TextColor="#1A1A2E" FontSize="12" Padding="14,0">
+                                <Button.Triggers>
+                                    <DataTrigger TargetType="Button" Binding="{Binding CurrentTransportMode}" Value="foot">
+                                        <Setter Property="TextColor" Value="White" />
+                                        <Setter Property="FontAttributes" Value="Bold" />
+                                    </DataTrigger>
+                                </Button.Triggers>
+                            </Button>
+                        </Border>
+                        <Border BackgroundColor="#22000000" Stroke="#30FFFFFF" StrokeThickness="1" HeightRequest="36">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="18" /></Border.StrokeShape>
+                            <Border.Triggers>
+                                <DataTrigger TargetType="Border" Binding="{Binding CurrentTransportMode}" Value="hike">
+                                    <Setter Property="BackgroundColor" Value="#CC1B72E8" />
+                                    <Setter Property="Stroke" Value="#60FFFFFF" />
+                                </DataTrigger>
+                            </Border.Triggers>
+                            <Button x:Name="btnModeHike" Text="🥾 Wandern"
+                                    Command="{Binding TransportModeCommand}" CommandParameter="hike"
+                                    HeightRequest="36" BackgroundColor="Transparent"
+                                    TextColor="#1A1A2E" FontSize="12" Padding="14,0">
+                                <Button.Triggers>
+                                    <DataTrigger TargetType="Button" Binding="{Binding CurrentTransportMode}" Value="hike">
+                                        <Setter Property="TextColor" Value="White" />
+                                        <Setter Property="FontAttributes" Value="Bold" />
+                                    </DataTrigger>
+                                </Button.Triggers>
+                            </Button>
+                        </Border>
+                    </HorizontalStackLayout>
+                </ScrollView>
+            </VerticalStackLayout>
+        </Border>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- 3. PLACE DETAIL PANEL – Frosted Glass Bottom Sheet     -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <Border x:Name="placeDetailPanel"
+                VerticalOptions="End" HorizontalOptions="Fill"
+                Margin="0" Padding="0"
+                BackgroundColor="#D4FFFFFF" Stroke="#80FFFFFF" StrokeThickness="1"
+                IsVisible="{Binding IsPlaceDetailPanelVisible}"
+                HeightRequest="280">
+            <Border.StrokeShape><RoundRectangle CornerRadius="24,24,0,0" /></Border.StrokeShape>
+            <Border.Shadow><Shadow Brush="Black" Offset="0,-6" Radius="30" Opacity="0.18" /></Border.Shadow>
+            <Grid RowDefinitions="100, *" Padding="0">
+                <Grid Grid.Row="0" BackgroundColor="#20000000" Padding="0">
+                    <BoxView Color="#15000000" HorizontalOptions="Fill" VerticalOptions="Fill" />
+                    <Label Text="📷 Bild des Ziels" TextColor="#66000000" FontSize="14"
+                           FontAttributes="Bold" HorizontalOptions="Center" VerticalOptions="Center" />
+                </Grid>
+                <VerticalStackLayout Grid.Row="1" Padding="20,14,20,14" Spacing="10">
+                    <Label Text="{Binding PlaceTitle}" FontSize="19" FontAttributes="Bold"
+                           TextColor="#1A1A2E" LineBreakMode="TailTruncation" />
+                    <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
+                        <Label Text="{Binding PlaceSubtitle}" FontSize="12" TextColor="#66000000" />
+                        <Label Text="•" TextColor="#44000000" />
+                        <Label Text="{Binding PlaceDurationText}" FontSize="12"
+                               FontAttributes="Bold" TextColor="#1B72E8" />
+                    </HorizontalStackLayout>
+                    <Grid ColumnDefinitions="*, *" ColumnSpacing="12" Margin="0,8,0,0">
+                        <Border Grid.Column="0" BackgroundColor="#CC1B72E8"
+                                Stroke="#60FFFFFF" StrokeThickness="1" HeightRequest="46">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="23" /></Border.StrokeShape>
+                            <Border.Shadow><Shadow Brush="#1B72E8" Offset="0,4" Radius="12" Opacity="0.4" /></Border.Shadow>
+                            <Button Text="🗺️ Directions" Command="{Binding DirectionsCommand}"
+                                    BackgroundColor="Transparent" TextColor="White"
+                                    FontAttributes="Bold" HeightRequest="46" />
+                        </Border>
+                        <Border Grid.Column="1" BackgroundColor="#18000000"
+                                Stroke="#801B72E8" StrokeThickness="1.5" HeightRequest="46">
+                            <Border.StrokeShape><RoundRectangle CornerRadius="23" /></Border.StrokeShape>
+                            <Button Text="🚀 Start" Command="{Binding StartRouteCommand}"
+                                    BackgroundColor="Transparent" TextColor="#1B72E8"
+                                    FontAttributes="Bold" HeightRequest="46" />
+                        </Border>
+                    </Grid>
+                </VerticalStackLayout>
+            </Grid>
+        </Border>
+
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- 5. NAVIGATIONS-BANNER – Frosted Glass oben             -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <Border x:Name="navigationBanner"
+                VerticalOptions="Start" HorizontalOptions="Fill"
+                Margin="16,25,16,10"
+                BackgroundColor="#C0FFFFFF" Stroke="#80FFFFFF" StrokeThickness="1"
+                IsVisible="{Binding IsNavigationBannerVisible}"
+                HeightRequest="100">
+            <Border.StrokeShape><RoundRectangle CornerRadius="22" /></Border.StrokeShape>
+            <Border.Shadow><Shadow Brush="Black" Offset="0,10" Radius="28" Opacity="0.20" /></Border.Shadow>
+            <Grid>
+                <BoxView Color="#40FFFFFF" HeightRequest="2"
+                         VerticalOptions="Start" HorizontalOptions="Fill" Margin="16,0,16,0" />
+                <Grid ColumnDefinitions="60, *" Padding="16,12" ColumnSpacing="12" VerticalOptions="Center">
+                    <Label Grid.Column="0" Text="{Binding NavInstructionIcon}"
+                           FontSize="36" TextColor="#1A1A2E"
+                           HorizontalOptions="Center" VerticalOptions="Center" />
+                    <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
+                        <Label Text="{Binding NavInstructionText}"
+                               FontSize="16" FontAttributes="Bold" TextColor="#1A1A2E" />
+                        <Label Text="{Binding NavDistanceText}"
+                               FontSize="14" TextColor="#55000000" />
+                    </VerticalStackLayout>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- 6. NAVIGATIONS-FOOTER – Frosted Glass unten            -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <Border x:Name="navigationFooter"
+                VerticalOptions="End" HorizontalOptions="Fill"
+                Margin="0" Padding="20,18"
+                BackgroundColor="#C8FFFFFF" Stroke="#80FFFFFF" StrokeThickness="1"
+                IsVisible="{Binding IsNavigationFooterVisible}"
+                HeightRequest="148">
+            <Border.StrokeShape><RoundRectangle CornerRadius="24,24,0,0" /></Border.StrokeShape>
+            <Border.Shadow><Shadow Brush="Black" Offset="0,-6" Radius="30" Opacity="0.18" /></Border.Shadow>
+            <VerticalStackLayout Spacing="14">
+                <VerticalStackLayout Spacing="2">
+                    <Label Text="{Binding NavTimeLeftText}"
+                           FontSize="22" FontAttributes="Bold" TextColor="#1A1A2E"
+                           HorizontalOptions="Center" />
+                    <Label Text="{Binding NavDistanceLeftText}"
+                           FontSize="13" TextColor="#66000000" HorizontalOptions="Center" />
+                </VerticalStackLayout>
+                <Border BackgroundColor="#CCE74C3C" Stroke="#60FFFFFF" StrokeThickness="1"
+                        HeightRequest="46" HorizontalOptions="Fill">
+                    <Border.StrokeShape><RoundRectangle CornerRadius="23" /></Border.StrokeShape>
+                    <Border.Shadow><Shadow Brush="#E74C3C" Offset="0,4" Radius="12" Opacity="0.4" /></Border.Shadow>
+                    <Button Text="✕ Navigation beenden"
+                            Command="{Binding ExitNavigationCommand}"
+                            BackgroundColor="Transparent" TextColor="White"
+                            FontAttributes="Bold" HeightRequest="46" HorizontalOptions="Fill" />
+                </Border>
+            </VerticalStackLayout>
+        </Border>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- WANDER-ROUTE DETAIL PANEL – Bottom Sheet                -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <Border x:Name="hikingDetailPanel"
+                VerticalOptions="End" HorizontalOptions="Fill"
+                Margin="0" Padding="0"
+                BackgroundColor="#D4FFFFFF" Stroke="#80FFFFFF" StrokeThickness="1"
+                IsVisible="{Binding IsHikingDetailPanelVisible}"
+                HeightRequest="310">
+            <Border.StrokeShape><RoundRectangle CornerRadius="24,24,0,0" /></Border.StrokeShape>
+            <Border.Shadow><Shadow Brush="Black" Offset="0,-6" Radius="30" Opacity="0.18" /></Border.Shadow>
+            <Grid RowDefinitions="Auto, *, Auto" Padding="20,16">
+                <!-- Header / Title & Distance -->
+                <VerticalStackLayout Grid.Row="0" Spacing="4">
+                    <BoxView Color="#30000000" WidthRequest="40" HeightRequest="5" CornerRadius="2.5" HorizontalOptions="Center" Margin="0,0,0,10" />
+                    <Label Text="{Binding PlaceTitle}" FontSize="20" FontAttributes="Bold" TextColor="#2C3E50" LineBreakMode="TailTruncation" />
+                    <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
+                        <Label Text="🟢 Wanderweg" FontSize="12" TextColor="#27AE60" FontAttributes="Bold" />
+                        <Label Text="•" TextColor="#888888" />
+                        <Label Text="{Binding PlaceSubtitle}" FontSize="13" TextColor="#7F8C8D" FontAttributes="Bold" />
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+                
+                <!-- Elevation Profile Placeholder -->
+                <Grid Grid.Row="1" Margin="0,12" BackgroundColor="#0F27AE60" HeightRequest="80" ColumnDefinitions="*, *, *, *, *">
+                    <!-- Simulated Elevation Gradient Line Chart -->
+                    <Path Stroke="#27AE60" StrokeThickness="3.5" Aspect="Fill" Fill="#2027AE60"
+                          Data="M 0,60 Q 20,20 40,50 T 80,10 T 120,70 T 160,40 L 160,80 L 0,80 Z"
+                          HorizontalOptions="Fill" VerticalOptions="Fill" Grid.ColumnSpan="5" />
+                    <Label Text="⛰️ Höhenprofil (Vorschau)" TextColor="#27AE60" FontSize="11" FontAttributes="Bold"
+                           HorizontalOptions="Center" VerticalOptions="Center" Grid.ColumnSpan="5" />
+                </Grid>
+
+                <!-- Actions -->
+                <Grid Grid.Row="2" ColumnDefinitions="*, *, *" ColumnSpacing="8" Margin="0,4,0,0">
+                    <Border Grid.Column="0" BackgroundColor="#F0F3F4" Stroke="#BDC3C7" StrokeThickness="1" HeightRequest="46">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="23" /></Border.StrokeShape>
+                        <Button Text="🗺️ Karte" Clicked="OnZoomToSelectedHikingRouteClicked"
+                                BackgroundColor="Transparent" TextColor="#2C3E50" FontAttributes="Bold" HeightRequest="46" />
+                    </Border>
+                    <Border Grid.Column="1" BackgroundColor="#E8F5E9" Stroke="#27AE60" StrokeThickness="1" HeightRequest="46">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="23" /></Border.StrokeShape>
+                        <Button Text="ℹ️ Details" Command="{Binding ShowMoreHikingDetailsCommand}"
+                                BackgroundColor="Transparent" TextColor="#27AE60" FontAttributes="Bold" HeightRequest="46" />
+                    </Border>
+                    <Border Grid.Column="2" BackgroundColor="#27AE60" Stroke="Transparent" HeightRequest="46">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="23" /></Border.StrokeShape>
+                        <Border.Shadow><Shadow Brush="#27AE60" Offset="0,4" Radius="10" Opacity="0.3" /></Border.Shadow>
+                        <Button Text="🥾 Start" Command="{Binding StartHikingRouteCommand}"
+                                BackgroundColor="Transparent" TextColor="White" FontAttributes="Bold" HeightRequest="46" />
+                    </Border>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- KARTEN-STEUERUNGSBUTTONS – Frosted Glass rechts unten  -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <VerticalStackLayout VerticalOptions="End" HorizontalOptions="End"
+                             Margin="16,0,16,30" Spacing="10">
+            <Border BackgroundColor="#C0FFFFFF" Stroke="#80FFFFFF" StrokeThickness="1"
+                    WidthRequest="50" HeightRequest="50"
+                    IsVisible="{Binding IsRecenterNavVisible}">
+                <Border.StrokeShape><RoundRectangle CornerRadius="25" /></Border.StrokeShape>
+                <Border.Shadow><Shadow Brush="Black" Offset="0,4" Radius="12" Opacity="0.14" /></Border.Shadow>
+                <Button x:Name="btnRecenterNav" Text="📍"
+                        Command="{Binding RecenterNavCommand}"
+                        HeightRequest="50" WidthRequest="50"
+                        BackgroundColor="Transparent" TextColor="#1A1A2E" />
+            </Border>
+            <Border BackgroundColor="#C0FFFFFF" Stroke="#80FFFFFF" StrokeThickness="1"
+                    WidthRequest="50" HeightRequest="50">
+                <Border.StrokeShape><RoundRectangle CornerRadius="25" /></Border.StrokeShape>
+                <Border.Shadow><Shadow Brush="Black" Offset="0,4" Radius="12" Opacity="0.14" /></Border.Shadow>
+                <Button Text="🧩" Clicked="OnCompassButtonClicked"
+                        HeightRequest="50" WidthRequest="50" BackgroundColor="Transparent" />
+            </Border>
+            <Border BackgroundColor="#C0FFFFFF" Stroke="#80FFFFFF" StrokeThickness="1"
+                    WidthRequest="50" HeightRequest="50">
+                <Border.StrokeShape><RoundRectangle CornerRadius="25" /></Border.StrokeShape>
+                <Border.Shadow><Shadow Brush="Black" Offset="0,4" Radius="12" Opacity="0.14" /></Border.Shadow>
+                <Button Text="🥾" Command="{Binding ToggleWaymarkedTrailsCommand}"
+                        HeightRequest="50" WidthRequest="50" BackgroundColor="Transparent" />
+            </Border>
+            <Border BackgroundColor="#C0FFFFFF" Stroke="#80FFFFFF" StrokeThickness="1"
+                    WidthRequest="50" HeightRequest="50">
+                <Border.StrokeShape><RoundRectangle CornerRadius="25" /></Border.StrokeShape>
+                <Border.Shadow><Shadow Brush="Black" Offset="0,4" Radius="12" Opacity="0.14" /></Border.Shadow>
+                <Button Text="🗺️" Clicked="OnMapStyleButtonClicked"
+                        HeightRequest="50" WidthRequest="50" BackgroundColor="Transparent" />
+            </Border>
+            <Border BackgroundColor="#C0FFFFFF" Stroke="#80FFFFFF" StrokeThickness="1"
+                    WidthRequest="50" HeightRequest="106">
+                <Border.StrokeShape><RoundRectangle CornerRadius="14" /></Border.StrokeShape>
+                <Border.Shadow><Shadow Brush="Black" Offset="0,4" Radius="12" Opacity="0.14" /></Border.Shadow>
+                <VerticalStackLayout Spacing="0" VerticalOptions="Fill" HorizontalOptions="Fill">
+                    <Button Text="+" Clicked="OnZoomInClicked"
+                            HeightRequest="52" WidthRequest="50"
+                            BackgroundColor="Transparent" TextColor="#1A1A2E"
+                            FontAttributes="Bold" FontSize="20" CornerRadius="0" />
+                    <BoxView Color="#22000000" HeightRequest="1" HorizontalOptions="Fill" />
+                    <Button Text="-" Clicked="OnZoomOutClicked"
+                            HeightRequest="52" WidthRequest="50"
+                            BackgroundColor="Transparent" TextColor="#1A1A2E"
+                            FontAttributes="Bold" FontSize="20" CornerRadius="0" />
+                </VerticalStackLayout>
+            </Border>
+            <Border BackgroundColor="#C0FFFFFF" Stroke="#80FFFFFF" StrokeThickness="1"
+                    WidthRequest="50" HeightRequest="50">
+                <Border.StrokeShape><RoundRectangle CornerRadius="25" /></Border.StrokeShape>
+                <Border.Shadow><Shadow Brush="Black" Offset="0,4" Radius="12" Opacity="0.14" /></Border.Shadow>
+                <Button Text="🎯" Command="{Binding GPSButtonClickedCommand}"
+                        HeightRequest="50" WidthRequest="50" BackgroundColor="Transparent" />
+            </Border>
+        </VerticalStackLayout>
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- 4. ROUTEN-INFO-PANEL – Frosted Glass Bottom Sheet      -->
+        <!-- (Positioned last before modal so it overlays map buttons) -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <Border x:Name="routeInfoPanel"
+                VerticalOptions="End" HorizontalOptions="Fill"
+                Margin="0" Padding="20,12"
+                BackgroundColor="#D4FFFFFF" Stroke="#80FFFFFF" StrokeThickness="1"
+                IsVisible="{Binding IsRouteInfoPanelVisible}">
+            <Border.GestureRecognizers>
+                <SwipeGestureRecognizer Direction="Up" Swiped="OnRouteInfoSwipedUp" />
+                <SwipeGestureRecognizer Direction="Down" Swiped="OnRouteInfoSwipedDown" />
+            </Border.GestureRecognizers>
+            <Border.StrokeShape><RoundRectangle CornerRadius="24,24,0,0" /></Border.StrokeShape>
+            <Border.Shadow><Shadow Brush="Black" Offset="0,-6" Radius="30" Opacity="0.18" /></Border.Shadow>
+            <Grid RowDefinitions="Auto, *, Auto" Padding="0">
+
+                <!-- TOP: Handle + Header (always visible) -->
+                <VerticalStackLayout Grid.Row="0" Spacing="12" Padding="0,12,0,0">
+                    <!-- Bottom Sheet Handle -->
+                    <BoxView HeightRequest="4" WidthRequest="40" Color="#B0B0B0" CornerRadius="2" HorizontalOptions="Center" Margin="0,0,0,6" />
+
+                    <!-- Header (Duration and Icon) -->
+                    <Grid ColumnDefinitions="*, Auto" VerticalOptions="Center" Margin="20,0">
+                        <Label Grid.Column="0" Text="{Binding RouteDurationText}" FontSize="22"
+                               FontAttributes="Bold" TextColor="#E67E22" VerticalOptions="Center" />
+                        <Label Grid.Column="1" Text="{Binding RouteModeIcon}"
+                               FontSize="28" VerticalOptions="Center" />
+                    </Grid>
+                </VerticalStackLayout>
+
+                <!-- MIDDLE: Steps List – scrollable, hidden by default -->
+                <ScrollView x:Name="stepsScrollView" Grid.Row="1" IsVisible="False"
+                            VerticalScrollBarVisibility="Default" Margin="20,8,20,8">
+                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding SelectedRoute.Steps}" Padding="0,0,0,8">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnDefinitions="44, *" RowDefinitions="Auto, Auto, Auto" Margin="0,0,0,12">
+                                    <Label Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" Text="{Binding Emoji}" FontSize="24" HorizontalOptions="Center" VerticalOptions="Start" Margin="0,4,0,0" />
+                                    <Label Grid.Row="0" Grid.Column="1" Text="{Binding FormattedInstruction}" FontSize="15" TextColor="#1A1A2E" FontAttributes="Bold" />
+                                    <Label Grid.Row="1" Grid.Column="1" Text="{Binding FormattedDistance}" FontSize="13" TextColor="#66000000" Margin="0,2,0,0" />
+                                    <BoxView Grid.Row="2" Grid.Column="1" HeightRequest="1" Color="#20000000" Margin="0,12,0,0" HorizontalOptions="Fill" />
+                                </Grid>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </ScrollView>
+
+                <!-- BOTTOM: Action Buttons (always visible) -->
+                <Grid Grid.Row="2" ColumnDefinitions="*, *" ColumnSpacing="12" Padding="20,8,20,16">
+                    <Border Grid.Column="0" BackgroundColor="#CC2ECC71"
+                            Stroke="#60FFFFFF" StrokeThickness="1" HeightRequest="46">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="23" /></Border.StrokeShape>
+                        <Border.Shadow><Shadow Brush="#2ECC71" Offset="0,4" Radius="12" Opacity="0.4" /></Border.Shadow>
+                        <Button Text="🚀 Vorschau / Start" Command="{Binding StartNavigationCommand}"
+                                BackgroundColor="Transparent" TextColor="White"
+                                FontAttributes="Bold" HeightRequest="46" />
+                    </Border>
+                    <Border Grid.Column="1" BackgroundColor="#CCE74C3C"
+                            Stroke="#60FFFFFF" StrokeThickness="1" HeightRequest="46">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="23" /></Border.StrokeShape>
+                        <Border.Shadow><Shadow Brush="#E74C3C" Offset="0,4" Radius="12" Opacity="0.4" /></Border.Shadow>
+                        <Button Text="❌ Beenden" Command="{Binding ExitRoutingCommand}"
+                                BackgroundColor="Transparent" TextColor="White"
+                                FontAttributes="Bold" HeightRequest="46" />
+                    </Border>
+                </Grid>
+            </Grid>
+        </Border>
+
+
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- DETAILS DIALOG MODAL – Frosted Glass Popup Overlay      -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <Grid x:Name="hikingDetailsModal"
+              IsVisible="{Binding IsHikingModalVisible}"
+              BackgroundColor="#80000000"
+              Padding="24,40">
+            <Border VerticalOptions="Center" HorizontalOptions="Fill"
+                    BackgroundColor="#F4F6F7" Stroke="#BDC3C7" StrokeThickness="1"
+                    MaximumHeightRequest="500">
+                <Border.StrokeShape><RoundRectangle CornerRadius="20" /></Border.StrokeShape>
+                <Grid RowDefinitions="Auto, *, Auto" Padding="20">
+                    <!-- Title -->
+                    <Grid Grid.Row="0" ColumnDefinitions="*, Auto" Margin="0,0,0,12">
+                        <VerticalStackLayout Grid.Column="0">
+                            <Label Text="Strecken-Informationen" FontSize="18" FontAttributes="Bold" TextColor="#2C3E50" />
+                            <Label Text="{Binding SelectedHikingRoute.Name}" FontSize="12" TextColor="#7F8C8D" />
+                        </VerticalStackLayout>
+                        <Button Grid.Column="1" Text="✕" FontSize="14" FontAttributes="Bold"
+                                TextColor="#7F8C8D" BackgroundColor="Transparent" Command="{Binding CloseHikingModalCommand}" />
+                    </Grid>
+                    
+                    <!-- Scrollable list of Tags -->
+                    <ScrollView Grid.Row="1" Margin="0,4">
+                        <VerticalStackLayout Spacing="8">
+                            <CollectionView ItemsSource="{Binding HikingRouteTags}">
+                                <CollectionView.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid ColumnDefinitions="120, *" Padding="0,6" RowDefinitions="*, 1">
+                                            <Label Grid.Column="0" Text="{Binding Key}" FontAttributes="Bold" TextColor="#34495E" FontSize="12" LineBreakMode="TailTruncation" />
+                                            <Label Grid.Column="1" Text="{Binding Value}" TextColor="#2C3E50" FontSize="12" LineBreakMode="WordWrap" />
+                                            <BoxView Grid.Row="1" Grid.ColumnSpan="2" Color="#15000000" HeightRequest="1" Margin="0,6,0,0" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </CollectionView.ItemTemplate>
+                            </CollectionView>
+                        </VerticalStackLayout>
+                    </ScrollView>
+
+                    <!-- Footer Close Action -->
+                    <Border Grid.Row="2" BackgroundColor="#34495E" Stroke="Transparent" HeightRequest="44" Margin="0,12,0,0">
+                        <Border.StrokeShape><RoundRectangle CornerRadius="22" /></Border.StrokeShape>
+                        <Button Text="Schließen" Command="{Binding CloseHikingModalCommand}"
+                                BackgroundColor="Transparent" TextColor="White" FontAttributes="Bold" HeightRequest="44" />
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+
+    </Grid>
+</ContentView>
