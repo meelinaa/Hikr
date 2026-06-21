@@ -3,4 +3,7 @@
   <Project Path="Hikr.App/Hikr.App.csproj" Id="d37aba4c-57e2-45a0-a30a-9bfeb9d65b9d">
     <Deploy Solution="Debug|*" />
   </Project>
+  <Project Path="Hikr.Application/Hikr.Application.csproj" />
+  <Project Path="Hikr.Domain/Hikr.Domain.csproj" />
+  <Project Path="Hikr.Infrastructure/Hikr.Infrastructure.csproj" />
 </Solution>

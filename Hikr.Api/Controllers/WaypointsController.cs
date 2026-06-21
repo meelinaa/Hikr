@@ -1,5 +1,5 @@
-using Hikr.Api.Entities;
-using Hikr.Api.Services;
+using Hikr.Application.DTOs;
+using Hikr.Application.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Hikr.Api.Controllers;
@@ -33,18 +33,18 @@ public class WaypointsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateWaypoint([FromBody] Waypoints waypoint)
+    public async Task<IActionResult> CreateWaypoint([FromBody] CreateWaypointDto waypointDto)
     {
-        var createdWaypoint = await _waypointService.CreateWaypointAsync(waypoint);
+        var createdWaypoint = await _waypointService.CreateWaypointAsync(waypointDto);
         return CreatedAtAction(nameof(GetWaypointById), new { id = createdWaypoint.Id }, createdWaypoint);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateWaypoint(int id, [FromBody] Waypoints waypoint)
+    public async Task<IActionResult> UpdateWaypoint(int id, [FromBody] UpdateWaypointDto waypointDto)
     {
-        if (id != waypoint.Id) return BadRequest();
+        if (id != waypointDto.Id) return BadRequest();
         
-        await _waypointService.UpdateWaypointAsync(waypoint);
+        await _waypointService.UpdateWaypointAsync(waypointDto);
         return NoContent();
     }
 

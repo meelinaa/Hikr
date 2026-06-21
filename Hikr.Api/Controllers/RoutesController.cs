@@ -1,5 +1,5 @@
-using Hikr.Api.Entities;
-using Hikr.Api.Services;
+using Hikr.Application.DTOs;
+using Hikr.Application.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Hikr.Api.Controllers;
@@ -31,18 +31,18 @@ public class RoutesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateRoute([FromBody] Routes route)
+    public async Task<IActionResult> CreateRoute([FromBody] CreateRouteDto routeDto)
     {
-        var createdRoute = await _routeService.CreateRouteAsync(route);
+        var createdRoute = await _routeService.CreateRouteAsync(routeDto);
         return CreatedAtAction(nameof(GetRouteById), new { id = createdRoute.Id }, createdRoute);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateRoute(int id, [FromBody] Routes route)
+    public async Task<IActionResult> UpdateRoute(int id, [FromBody] UpdateRouteDto routeDto)
     {
-        if (id != route.Id) return BadRequest();
+        if (id != routeDto.Id) return BadRequest();
         
-        await _routeService.UpdateRouteAsync(route);
+        await _routeService.UpdateRouteAsync(routeDto);
         return NoContent();
     }
 

@@ -1,7 +1,8 @@
-using Hikr.Api.Data;
+using Hikr.Infrastructure.Data;
 using Hikr.Api.Infrastructure;
-using Hikr.Api.Repositories;
-using Hikr.Api.Services;
+using Hikr.Application.Repositories;
+using Hikr.Infrastructure.Repositories;
+using Hikr.Application.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace Hikr.Api.Extensions;
