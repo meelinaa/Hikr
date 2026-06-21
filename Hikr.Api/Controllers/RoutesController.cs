@@ -1,3 +1,5 @@
+using Hikr.Api.Entities;
+using Hikr.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Hikr.Api.Controllers;
@@ -6,33 +8,48 @@ namespace Hikr.Api.Controllers;
 [Route("routes")]
 public class RoutesController : ControllerBase
 {
-    [HttpGet]
-    public IActionResult GetAllRoutes()
+    private readonly IRouteService _routeService;
+
+    public RoutesController(IRouteService routeService)
     {
-        return Ok();
+        _routeService = routeService;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetAllRoutes()
+    {
+        var routes = await _routeService.GetAllRoutesAsync();
+        return Ok(routes);
     }
 
     [HttpGet("{id}")]
-    public IActionResult GetRouteById(int id)
+    public async Task<IActionResult> GetRouteById(int id)
     {
-        return Ok();
+        var route = await _routeService.GetRouteByIdAsync(id);
+        if (route == null) return NotFound();
+        return Ok(route);
     }
 
     [HttpPost]
-    public IActionResult CreateRoute()
+    public async Task<IActionResult> CreateRoute([FromBody] Routes route)
     {
-        return Ok();
+        var createdRoute = await _routeService.CreateRouteAsync(route);
+        return CreatedAtAction(nameof(GetRouteById), new { id = createdRoute.Id }, createdRoute);
     }
 
     [HttpPut("{id}")]
-    public IActionResult UpdateRoute(int id)
+    public async Task<IActionResult> UpdateRoute(int id, [FromBody] Routes route)
     {
-        return Ok();
+        if (id != route.Id) return BadRequest();
+        
+        await _routeService.UpdateRouteAsync(route);
+        return NoContent();
     }
 
     [HttpDelete("{id}")]
-    public IActionResult DeleteRoute(int id)
+    public async Task<IActionResult> DeleteRoute(int id)
     {
-        return Ok();
+        await _routeService.DeleteRouteAsync(id);
+        return NoContent();
     }
 }

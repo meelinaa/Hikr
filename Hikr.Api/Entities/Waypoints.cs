@@ -1,13 +1,24 @@
+using NetTopologySuite.Geometries;
+
 namespace Hikr.Api.Entities;
 
 public class Waypoints
 {
     public int Id { get; set; }
-    public int RouteId { get; set; }
-    public int Reihenfolge { get; set; }
-    public double Latitude { get; set; }
-    public double Longitude { get; set; }
+    
+    /// <summary>
+    /// The location of the Waypoint (Point).
+    /// </summary>
+    public Geometry GeoJson { get; set; } = null!;
+    
+    /// <summary>
+    /// Name of the POI, e.g. "Aussichtspunkt Turm"
+    /// </summary>
     public string? Name { get; set; }
 
-    public Routes Route { get; set; } = null!;
+    /// <summary>
+    /// Category/Type of the Waypoint, e.g. "Viewpoint", "Hut", "Navigation"
+    /// </summary>
+    public string? Type { get; set; }
+
 }
