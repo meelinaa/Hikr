@@ -8,6 +8,6 @@ public class Routes
     public string Name { get; set; } = string.Empty;
     public string Transportation { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
-    public Geometry GeoJson { get; set; } = null!;
-    public List<int> WaypointIds { get; set; } = new List<int>();
+    public Geometry Geometry { get; set; } = null!;
+    public List<RouteWaypoint> RouteWaypoints { get; set; } = new();
 }

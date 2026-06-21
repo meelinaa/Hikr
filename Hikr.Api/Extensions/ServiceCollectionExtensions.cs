@@ -3,6 +3,7 @@ using Hikr.Api.Infrastructure;
 using Hikr.Application.Repositories;
 using Hikr.Infrastructure.Repositories;
 using Hikr.Application.Services;
+using Hikr.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace Hikr.Api.Extensions;
@@ -52,6 +53,8 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<IRouteService, RouteService>();
         services.AddScoped<IWaypointService, WaypointService>();
+
+        services.AddHttpClient<IOsrmService, OsrmService>();
 
         return services;
     }

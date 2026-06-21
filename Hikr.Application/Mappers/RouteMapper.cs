@@ -13,8 +13,8 @@ public static class RouteMapper
             Name = route.Name,
             Transportation = route.Transportation,
             CreatedAt = route.CreatedAt,
-            GeoJson = route.GeoJson,
-            WaypointIds = route.WaypointIds
+            GeoJson = route.Geometry,
+            WaypointIds = route.RouteWaypoints.OrderBy(rw => rw.Order).Select(rw => rw.WaypointId).ToList()
         };
     }
 
@@ -24,8 +24,13 @@ public static class RouteMapper
         {
             Name = dto.Name,
             Transportation = dto.Transportation,
-            GeoJson = dto.GeoJson,
-            WaypointIds = dto.WaypointIds
+            RouteWaypoints = dto.WaypointIds
+                .Select((id, index) => new RouteWaypoint 
+                { 
+                    WaypointId = id, 
+                    Order = index + 1 
+                })
+                .ToList()
         };
     }
 
@@ -33,7 +38,12 @@ public static class RouteMapper
     {
         route.Name = dto.Name;
         route.Transportation = dto.Transportation;
-        route.GeoJson = dto.GeoJson;
-        route.WaypointIds = dto.WaypointIds;
+        route.RouteWaypoints = dto.WaypointIds
+            .Select((id, index) => new RouteWaypoint 
+            { 
+                WaypointId = id, 
+                Order = index + 1 
+            })
+            .ToList();
     }
 }

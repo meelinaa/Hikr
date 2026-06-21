@@ -16,7 +16,6 @@ public class CreateRouteDto
 {
     public string Name { get; set; } = string.Empty;
     public string Transportation { get; set; } = string.Empty;
-    public Geometry GeoJson { get; set; } = null!;
     public List<int> WaypointIds { get; set; } = new List<int>();
 }
 
@@ -25,6 +24,5 @@ public class UpdateRouteDto
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Transportation { get; set; } = string.Empty;
-    public Geometry GeoJson { get; set; } = null!;
     public List<int> WaypointIds { get; set; } = new List<int>();
 }

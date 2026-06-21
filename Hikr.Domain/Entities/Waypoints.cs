@@ -9,7 +9,7 @@ public class Waypoints
     /// <summary>
     /// The location of the Waypoint (Point).
     /// </summary>
-    public Geometry GeoJson { get; set; } = null!;
+    public Geometry Geometry { get; set; } = null!;
     
     /// <summary>
     /// Name of the POI, e.g. "Aussichtspunkt Turm"
@@ -21,4 +21,5 @@ public class Waypoints
     /// </summary>
     public string? Type { get; set; }
 
+    public List<RouteWaypoint> RouteWaypoints { get; set; } = new();
 }

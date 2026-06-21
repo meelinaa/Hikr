@@ -10,7 +10,7 @@ public static class WaypointMapper
         return new WaypointDto
         {
             Id = waypoint.Id,
-            GeoJson = waypoint.GeoJson,
+            Geometry = waypoint.Geometry,
             Name = waypoint.Name,
             Type = waypoint.Type
         };
@@ -20,7 +20,7 @@ public static class WaypointMapper
     {
         return new Waypoints
         {
-            GeoJson = dto.GeoJson,
+            Geometry = dto.Geometry,
             Name = dto.Name,
             Type = dto.Type
         };
@@ -28,7 +28,7 @@ public static class WaypointMapper
 
     public static void UpdateEntity(this UpdateWaypointDto dto, Waypoints waypoint)
     {
-        waypoint.GeoJson = dto.GeoJson;
+        waypoint.Geometry = dto.Geometry;
         waypoint.Name = dto.Name;
         waypoint.Type = dto.Type;
     }
