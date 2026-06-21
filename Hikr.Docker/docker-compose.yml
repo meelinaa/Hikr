@@ -1,0 +1,29 @@
+services:
+  hikr-db:
+    image: postgis/postgis:16-3.4
+    container_name: hikr_postgres_postgis
+    environment:
+      - POSTGRES_USER=hikr_admin
+      - POSTGRES_PASSWORD=MeinSicheresPasswort123!
+      - POSTGRES_DB=hikr_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - hikr_db_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    networks:
+      - hikr-network
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U hikr_admin -d hikr_db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  hikr_db_data:
+    driver: local
+
+networks:
+  hikr-network:
+    driver: bridge
