@@ -83,4 +83,32 @@ public class RouteService : IRouteService
     {
         await _routeRepository.DeleteAsync(id);
     }
+
+    public async Task<CalculateRouteResponseDto?> CalculateRouteAsync(CalculateRouteDto calculateDto)
+    {
+        if (!Enum.TryParse<Profiles>(calculateDto.Transportation, true, out var profile))
+        {
+            return null;
+        }
+
+        var waypoints = await _waypointRepository.GetByIdsAsync(calculateDto.WaypointIds);
+        
+        var orderedWaypoints = calculateDto.WaypointIds
+            .Select(id => waypoints.FirstOrDefault(w => w.Id == id))
+            .Where(w => w != null)
+            .Select(w => w!)
+            .ToList();
+
+        if (orderedWaypoints.Count < 2)
+        {
+            return null;
+        }
+
+        var geometry = await _osrmService.CalculateGeometryAsync(orderedWaypoints, profile, OsrmServices.Route);
+
+        return new CalculateRouteResponseDto
+        {
+            Geometry = geometry
+        };
+    }
 }

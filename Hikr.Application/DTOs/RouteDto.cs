@@ -26,3 +26,14 @@ public class UpdateRouteDto
     public string Transportation { get; set; } = string.Empty;
     public List<int> WaypointIds { get; set; } = new List<int>();
 }
+
+public class CalculateRouteDto
+{
+    public List<int> WaypointIds { get; set; } = new List<int>();
+    public string Transportation { get; set; } = string.Empty;
+}
+
+public class CalculateRouteResponseDto
+{
+    public Geometry Geometry { get; set; } = null!;
+}

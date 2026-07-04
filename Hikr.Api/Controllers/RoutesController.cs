@@ -52,4 +52,12 @@ public class RoutesController : ControllerBase
         await _routeService.DeleteRouteAsync(id);
         return NoContent();
     }
+
+    [HttpPost("calculate")]
+    public async Task<IActionResult> CalculateRoute([FromBody] CalculateRouteDto calculateDto)
+    {
+        var response = await _routeService.CalculateRouteAsync(calculateDto);
+        if (response == null) return BadRequest("Could not calculate route. Ensure valid transportation profile and at least 2 valid waypoint IDs.");
+        return Ok(response);
+    }
 }

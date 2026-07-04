@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodels="clr-namespace:Hikr.Maui.App.ViewModels"
+             xmlns:domain="clr-namespace:Hikr.Domain.Enums;assembly=Hikr.Domain"
+             x:Class="Hikr.Maui.App.Views.CreateRoutePage"
+             Title="CreateRoutePage"
+             NavigationPage.HasNavigationBar="False"
+             Shell.NavBarIsVisible="False">
+
+    <Grid RowDefinitions="Auto, *, Auto">
+        
+        <!-- Header -->
+        <Grid Grid.Row="0" ColumnDefinitions="Auto, *" BackgroundColor="#1b4d3e" Padding="10,15,10,15">
+            <Button Grid.Column="0" Text="←" TextColor="White" BackgroundColor="Transparent" FontSize="24" Command="{Binding GoBackCommand}" />
+            <Label Grid.Column="1" Text="Route erstellen" TextColor="White" FontSize="20" FontAttributes="Bold" VerticalOptions="Center" HorizontalOptions="Center" Margin="-40,0,0,0"/>
+        </Grid>
+        
+        <!-- Scrollable Content -->
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Padding="20" Spacing="20">
+                
+                <!-- Map Mock -->
+                <Border StrokeThickness="1" Stroke="LightGray" HeightRequest="300" HorizontalOptions="Fill">
+                    <!-- OSM Mock via WebView -->
+                    <WebView Source="https://www.openstreetmap.org/export/embed.html?bbox=8.66%2C50.1%2C8.7%2C50.13&amp;layer=mapnik" />
+                </Border>
+                
+                <!-- Waypoints Header -->
+                <Grid ColumnDefinitions="*, Auto">
+                    <Label Grid.Column="0" Text="Wegpunkte" FontSize="18" FontAttributes="Bold" VerticalOptions="Center" />
+                    <Button Grid.Column="1" Text="+" BackgroundColor="#1b4d3e" TextColor="White" WidthRequest="40" HeightRequest="40" CornerRadius="20" Command="{Binding AddWaypointCommand}" />
+                </Grid>
+                
+                <!-- Waypoints List -->
+                <VerticalStackLayout BindableLayout.ItemsSource="{Binding Waypoints}" Spacing="10">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="viewmodels:WaypointMock">
+                            <Grid ColumnDefinitions="*, Auto">
+                                <Entry Grid.Column="0" Text="{Binding Name}" Placeholder="Ort eingeben..." BackgroundColor="#f0f0f0" />
+                                <Button Grid.Column="1" Text="🗑️" BackgroundColor="Transparent" FontSize="20" 
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type viewmodels:CreateRouteViewModel}}, Path=RemoveWaypointCommand}" 
+                                        CommandParameter="{Binding .}" />
+                            </Grid>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+                
+                <!-- Transport Profiles -->
+                <Label Text="Transportmittel" FontSize="18" FontAttributes="Bold" Margin="0,10,0,0" />
+                <HorizontalStackLayout Spacing="10">
+                    <Button Text="Wandern" 
+                            Command="{Binding SelectProfileCommand}" 
+                            CommandParameter="{x:Static domain:Profiles.Foot}"
+                            BackgroundColor="{Binding FootBackgroundColor}"
+                            BorderColor="{Binding FootBorderColor}"
+                            BorderWidth="2" TextColor="Black" />
+                    <Button Text="Fahrrad" 
+                            Command="{Binding SelectProfileCommand}" 
+                            CommandParameter="{x:Static domain:Profiles.Bike}"
+                            BackgroundColor="{Binding BikeBackgroundColor}"
+                            BorderColor="{Binding BikeBorderColor}"
+                            BorderWidth="2" TextColor="Black" />
+                    <Button Text="Auto" 
+                            Command="{Binding SelectProfileCommand}" 
+                            CommandParameter="{x:Static domain:Profiles.Car}"
+                            BackgroundColor="{Binding CarBackgroundColor}"
+                            BorderColor="{Binding CarBorderColor}"
+                            BorderWidth="2" TextColor="Black" />
+                </HorizontalStackLayout>
+                
+            </VerticalStackLayout>
+        </ScrollView>
+        
+        <!-- Save Button -->
+        <Button Grid.Row="2" Text="Route speichern" BackgroundColor="#1b4d3e" TextColor="White" FontSize="18" FontAttributes="Bold" Margin="20" CornerRadius="10" HeightRequest="50" Command="{Binding SaveRouteCommand}" />
+        
+    </Grid>
+
+</ContentPage>

@@ -1,9 +1,13 @@
 <Solution>
-  <Project Path="Hikr.Api/Hikr.Api.csproj" Id="510fc16d-2df1-4820-9083-0133d3eada0d" />
-  <Project Path="Hikr.App/Hikr.App.csproj" Id="d37aba4c-57e2-45a0-a30a-9bfeb9d65b9d">
-    <Deploy Solution="Debug|*" />
-  </Project>
-  <Project Path="Hikr.Application/Hikr.Application.csproj" />
-  <Project Path="Hikr.Domain/Hikr.Domain.csproj" />
-  <Project Path="Hikr.Infrastructure/Hikr.Infrastructure.csproj" />
+  <Folder Name="/API/">
+    <Project Path="Hikr.Api/Hikr.Api.csproj" Id="510fc16d-2df1-4820-9083-0133d3eada0d" />
+    <Project Path="Hikr.Application/Hikr.Application.csproj" />
+    <Project Path="Hikr.Domain/Hikr.Domain.csproj" />
+    <Project Path="Hikr.Infrastructure/Hikr.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/Maui.Frontend/">
+    <Project Path="Hikr.Maui.App/Hikr.Maui.App.csproj" Id="1448a5aa-bee1-4ed2-a1e1-0494692115d4">
+      <Deploy Solution="Debug|*" />
+    </Project>
+  </Folder>
 </Solution>
