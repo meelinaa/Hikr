@@ -1,7 +1,8 @@
 using Hikr.Infrastructure.Data;
 using Hikr.Api.Infrastructure;
-using Hikr.Application.Repositories;
+using Hikr.Application.Ports.Outbound;
 using Hikr.Infrastructure.Repositories;
+using Hikr.Application.Ports.Inbound;
 using Hikr.Application.Services;
 using Hikr.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
@@ -51,8 +52,8 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
-        services.AddScoped<IRouteService, RouteService>();
-        services.AddScoped<IWaypointService, WaypointService>();
+        services.AddScoped<IRouteUseCase, RouteService>();
+        services.AddScoped<IWaypointUseCase, WaypointService>();
 
         services.AddHttpClient<IOsrmService, OsrmService>();
 

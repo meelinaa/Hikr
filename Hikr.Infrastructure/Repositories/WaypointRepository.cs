@@ -1,6 +1,7 @@
-using Hikr.Infrastructure.Data;
+using Hikr.Application.Ports.Outbound;
 using Hikr.Domain.Entities;
-using Hikr.Application.Repositories;
+using Hikr.Infrastructure.Data;
+using Hikr.Infrastructure.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Hikr.Infrastructure.Repositories;
@@ -14,43 +15,76 @@ public class WaypointRepository : IWaypointRepository
         _context = context;
     }
 
-    public async Task<IEnumerable<Waypoints>> GetAllAsync()
+    public async Task<IEnumerable<Waypoint>> GetAllAsync()
     {
-        return await _context.Waypoints.ToListAsync();
+        var entities = await _context.Waypoints.ToListAsync();
+        return entities.Select(MapToDomain);
     }
 
-    public async Task<IEnumerable<Waypoints>> GetByIdsAsync(IEnumerable<int> ids)
+    public async Task<IEnumerable<Waypoint>> GetByIdsAsync(IEnumerable<int> ids)
     {
-        return await _context.Waypoints
+        var entities = await _context.Waypoints
             .Where(w => ids.Contains(w.Id))
             .ToListAsync();
+        return entities.Select(MapToDomain);
     }
 
-    public async Task<Waypoints?> GetByIdAsync(int id)
+    public async Task<Waypoint?> GetByIdAsync(int id)
     {
-        return await _context.Waypoints.FindAsync(id);
+        var entity = await _context.Waypoints.FindAsync(id);
+        return entity == null ? null : MapToDomain(entity);
     }
 
-    public async Task<Waypoints> AddAsync(Waypoints waypoint)
+    public async Task<Waypoint> AddAsync(Waypoint waypoint)
     {
-        _context.Waypoints.Add(waypoint);
+        var entity = MapToEntity(waypoint);
+        _context.Waypoints.Add(entity);
         await _context.SaveChangesAsync();
+        waypoint.Id = entity.Id;
         return waypoint;
     }
 
-    public async Task UpdateAsync(Waypoints waypoint)
+    public async Task UpdateAsync(Waypoint waypoint)
     {
-        _context.Entry(waypoint).State = EntityState.Modified;
-        await _context.SaveChangesAsync();
+        var entity = await _context.Waypoints.FindAsync(waypoint.Id);
+        if (entity != null)
+        {
+            entity.Name = waypoint.Name;
+            entity.Type = waypoint.Type;
+            entity.Geometry = waypoint.Geometry;
+            await _context.SaveChangesAsync();
+        }
     }
 
     public async Task DeleteAsync(int id)
     {
-        var waypoint = await _context.Waypoints.FindAsync(id);
-        if (waypoint != null)
+        var entity = await _context.Waypoints.FindAsync(id);
+        if (entity != null)
         {
-            _context.Waypoints.Remove(waypoint);
+            _context.Waypoints.Remove(entity);
             await _context.SaveChangesAsync();
         }
+    }
+
+    private static Waypoint MapToDomain(WaypointEntity entity)
+    {
+        return new Waypoint
+        {
+            Id = entity.Id,
+            Name = entity.Name,
+            Type = entity.Type,
+            Geometry = entity.Geometry
+        };
+    }
+
+    private static WaypointEntity MapToEntity(Waypoint domain)
+    {
+        return new WaypointEntity
+        {
+            Id = domain.Id,
+            Name = domain.Name,
+            Type = domain.Type,
+            Geometry = domain.Geometry
+        };
     }
 }

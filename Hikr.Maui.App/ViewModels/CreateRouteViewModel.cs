@@ -8,7 +8,7 @@ namespace Hikr.Maui.App.ViewModels;
 
 public class WaypointMock
 {
-    public string Name { get; set; }
+    public string Name { get; set; } = string.Empty;
 }
 
 public class CreateRouteViewModel : BindableObject

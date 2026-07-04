@@ -1,11 +1,12 @@
-using Hikr.Application.DTOs;
+using DomainRoute = Hikr.Domain.Entities.Route;
 using Hikr.Domain.Entities;
+using Hikr.Api.DTOs.Routes;
 
-namespace Hikr.Application.Mappers;
+namespace Hikr.Api.Mappers;
 
 public static class RouteMapper
 {
-    public static RouteDto ToDto(this Routes route)
+    public static RouteDto ToDto(this DomainRoute route)
     {
         return new RouteDto
         {
@@ -18,9 +19,9 @@ public static class RouteMapper
         };
     }
 
-    public static Routes ToEntity(this CreateRouteDto dto)
+    public static DomainRoute ToEntity(this CreateRouteDto dto)
     {
-        return new Routes
+        return new DomainRoute
         {
             Name = dto.Name,
             Transportation = dto.Transportation,
@@ -34,7 +35,7 @@ public static class RouteMapper
         };
     }
 
-    public static void UpdateEntity(this UpdateRouteDto dto, Routes route)
+    public static void UpdateEntity(this UpdateRouteDto dto, DomainRoute route)
     {
         route.Name = dto.Name;
         route.Transportation = dto.Transportation;

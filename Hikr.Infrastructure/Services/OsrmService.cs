@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Hikr.Application.Services;
+using Hikr.Application.Ports.Outbound;
 using Hikr.Domain.Entities;
 using Hikr.Domain.Enums;
 using Microsoft.Extensions.Configuration;
@@ -20,7 +20,7 @@ public class OsrmService : IOsrmService
             ?? "http://router.project-osrm.org/route/v1/{profile}/{coordinates}";
     }
 
-    public async Task<Geometry> CalculateGeometryAsync(IEnumerable<Waypoints> waypoints, Profiles profile, OsrmServices service = OsrmServices.Route)
+    public async Task<Geometry> CalculateGeometryAsync(List<Waypoint> waypoints, Profiles profile, OsrmServices service = OsrmServices.Route)
     {
         var coordinatesList = waypoints
             .Where(w => w.Geometry is Point)

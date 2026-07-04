@@ -1,49 +1,35 @@
-using Hikr.Application.DTOs;
-using Hikr.Application.Mappers;
-using Hikr.Application.Repositories;
+using Hikr.Application.Ports.Inbound;
+using Hikr.Application.Ports.Outbound;
+using Hikr.Domain.Entities;
 
 namespace Hikr.Application.Services;
 
-public class WaypointService : IWaypointService
+public class WaypointService(IWaypointRepository waypointRepository) : IWaypointUseCase
 {
-    private readonly IWaypointRepository _waypointRepository;
+    private readonly IWaypointRepository _waypointRepository = waypointRepository;
 
-    public WaypointService(IWaypointRepository waypointRepository)
+    public async Task<IEnumerable<Waypoint>> GetAllWaypointsAsync()
     {
-        _waypointRepository = waypointRepository;
+        return await _waypointRepository.GetAllAsync();
     }
 
-    public async Task<IEnumerable<WaypointDto>> GetAllWaypointsAsync()
+    public async Task<IEnumerable<Waypoint>> GetWaypointsByIdsAsync(IEnumerable<int> ids)
     {
-        var waypoints = await _waypointRepository.GetAllAsync();
-        return waypoints.Select(w => w.ToDto());
+        return await _waypointRepository.GetByIdsAsync(ids);
     }
 
-    public async Task<IEnumerable<WaypointDto>> GetWaypointsByIdsAsync(IEnumerable<int> ids)
+    public async Task<Waypoint?> GetWaypointByIdAsync(int id)
     {
-        var waypoints = await _waypointRepository.GetByIdsAsync(ids);
-        return waypoints.Select(w => w.ToDto());
+        return await _waypointRepository.GetByIdAsync(id);
     }
 
-    public async Task<WaypointDto?> GetWaypointByIdAsync(int id)
+    public async Task<Waypoint> CreateWaypointAsync(Waypoint waypoint)
     {
-        var waypoint = await _waypointRepository.GetByIdAsync(id);
-        return waypoint?.ToDto();
+        return await _waypointRepository.AddAsync(waypoint);
     }
 
-    public async Task<WaypointDto> CreateWaypointAsync(CreateWaypointDto createDto)
+    public async Task UpdateWaypointAsync(Waypoint waypoint)
     {
-        var waypoint = createDto.ToEntity();
-        var createdWaypoint = await _waypointRepository.AddAsync(waypoint);
-        return createdWaypoint.ToDto();
-    }
-
-    public async Task UpdateWaypointAsync(UpdateWaypointDto updateDto)
-    {
-        var waypoint = await _waypointRepository.GetByIdAsync(updateDto.Id);
-        if (waypoint == null) return; // Or throw NotFoundException
-        
-        updateDto.UpdateEntity(waypoint);
         await _waypointRepository.UpdateAsync(waypoint);
     }
 

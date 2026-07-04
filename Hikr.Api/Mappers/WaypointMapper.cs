@@ -1,11 +1,11 @@
-using Hikr.Application.DTOs;
+using Hikr.Api.DTOs.Waypoints;
 using Hikr.Domain.Entities;
 
-namespace Hikr.Application.Mappers;
+namespace Hikr.Api.Mappers;
 
 public static class WaypointMapper
 {
-    public static WaypointDto ToDto(this Waypoints waypoint)
+    public static WaypointDto ToDto(this Waypoint waypoint)
     {
         return new WaypointDto
         {
@@ -16,9 +16,9 @@ public static class WaypointMapper
         };
     }
 
-    public static Waypoints ToEntity(this CreateWaypointDto dto)
+    public static Waypoint ToEntity(this CreateWaypointDto dto)
     {
-        return new Waypoints
+        return new Waypoint
         {
             Geometry = dto.Geometry,
             Name = dto.Name,
@@ -26,7 +26,7 @@ public static class WaypointMapper
         };
     }
 
-    public static void UpdateEntity(this UpdateWaypointDto dto, Waypoints waypoint)
+    public static void UpdateEntity(this UpdateWaypointDto dto, Waypoint waypoint)
     {
         waypoint.Geometry = dto.Geometry;
         waypoint.Name = dto.Name;

@@ -1,4 +1,4 @@
-using Hikr.Domain.Entities;
+using Hikr.Infrastructure.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Hikr.Infrastructure.Data;
@@ -9,9 +9,9 @@ public class HikrDbContext : DbContext
     {
     }
 
-    public DbSet<Routes> Routes { get; set; } = null!;
-    public DbSet<Waypoints> Waypoints { get; set; } = null!;
-    public DbSet<RouteWaypoint> RouteWaypoints { get; set; } = null!;
+    public DbSet<RouteEntity> Routes { get; set; } = null!;
+    public DbSet<WaypointEntity> Waypoints { get; set; } = null!;
+    public DbSet<RouteWaypointEntity> RouteWaypoints { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -20,7 +20,7 @@ public class HikrDbContext : DbContext
         // Configure PostGIS extension
         modelBuilder.HasPostgresExtension("postgis");
 
-        modelBuilder.Entity<Routes>(entity =>
+        modelBuilder.Entity<RouteEntity>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(255);
@@ -30,7 +30,7 @@ public class HikrDbContext : DbContext
             entity.Property(e => e.Geometry).HasColumnType("geometry");
         });
 
-        modelBuilder.Entity<Waypoints>(entity =>
+        modelBuilder.Entity<WaypointEntity>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).HasMaxLength(255);
@@ -40,7 +40,7 @@ public class HikrDbContext : DbContext
             entity.Property(e => e.Geometry).HasColumnType("geometry");
         });
 
-        modelBuilder.Entity<RouteWaypoint>(entity =>
+        modelBuilder.Entity<RouteWaypointEntity>(entity =>
         {
             entity.HasKey(e => e.Id);
 

@@ -1,41 +1,32 @@
-using Hikr.Application.DTOs;
-using Hikr.Application.Mappers;
-using Hikr.Application.Repositories;
+using Hikr.Application.Ports.Inbound;
+using Hikr.Application.Ports.Outbound;
+using Hikr.Domain.Entities;
 using Hikr.Domain.Enums;
+using NetTopologySuite.Geometries;
 
 namespace Hikr.Application.Services;
 
-public class RouteService : IRouteService
+public class RouteService(IRouteRepository routeRepository, IWaypointRepository waypointRepository, IOsrmService osrmService) : IRouteUseCase
 {
-    private readonly IRouteRepository _routeRepository;
-    private readonly IWaypointRepository _waypointRepository;
-    private readonly IOsrmService _osrmService;
+    private readonly IRouteRepository _routeRepository = routeRepository;
+    private readonly IWaypointRepository _waypointRepository = waypointRepository;
+    private readonly IOsrmService _osrmService = osrmService;
 
-    public RouteService(IRouteRepository routeRepository, IWaypointRepository waypointRepository, IOsrmService osrmService)
+    public async Task<IEnumerable<Route>> GetAllRoutesAsync()
     {
-        _routeRepository = routeRepository;
-        _waypointRepository = waypointRepository;
-        _osrmService = osrmService;
+        return await _routeRepository.GetAllAsync();
     }
 
-    public async Task<IEnumerable<RouteDto>> GetAllRoutesAsync()
+    public async Task<Route?> GetRouteByIdAsync(int id)
     {
-        var routes = await _routeRepository.GetAllAsync();
-        return routes.Select(r => r.ToDto());
+        return await _routeRepository.GetByIdAsync(id);
     }
 
-    public async Task<RouteDto?> GetRouteByIdAsync(int id)
+    public async Task<Route> CreateRouteAsync(Route route)
     {
-        var route = await _routeRepository.GetByIdAsync(id);
-        return route?.ToDto();
-    }
-
-    public async Task<RouteDto> CreateRouteAsync(CreateRouteDto createDto)
-    {
-        var route = createDto.ToEntity();
         route.CreatedAt = DateTime.UtcNow;
 
-        if (Enum.TryParse<Profiles>(createDto.Transportation, true, out var profile) && route.RouteWaypoints.Any())
+        if (Enum.TryParse<Profiles>(route.Transportation, true, out var profile) && route.RouteWaypoints.Any())
         {
             var waypoints = await _waypointRepository.GetByIdsAsync(route.RouteWaypoints.Select(rw => rw.WaypointId));
             var orderedWaypoints = route.RouteWaypoints.OrderBy(rw => rw.Order)
@@ -50,18 +41,12 @@ public class RouteService : IRouteService
             }
         }
 
-        var createdRoute = await _routeRepository.AddAsync(route);
-        return createdRoute.ToDto();
+        return await _routeRepository.AddAsync(route);
     }
 
-    public async Task UpdateRouteAsync(UpdateRouteDto updateDto)
+    public async Task UpdateRouteAsync(Route route)
     {
-        var route = await _routeRepository.GetByIdAsync(updateDto.Id);
-        if (route == null) return; // Or throw NotFoundException
-        
-        updateDto.UpdateEntity(route);
-
-        if (Enum.TryParse<Profiles>(updateDto.Transportation, true, out var profile) && route.RouteWaypoints.Any())
+        if (Enum.TryParse<Profiles>(route.Transportation, true, out var profile) && route.RouteWaypoints.Any())
         {
             var waypoints = await _waypointRepository.GetByIdsAsync(route.RouteWaypoints.Select(rw => rw.WaypointId));
             var orderedWaypoints = route.RouteWaypoints.OrderBy(rw => rw.Order)
@@ -84,16 +69,11 @@ public class RouteService : IRouteService
         await _routeRepository.DeleteAsync(id);
     }
 
-    public async Task<CalculateRouteResponseDto?> CalculateRouteAsync(CalculateRouteDto calculateDto)
+    public async Task<Geometry?> CalculateRouteGeometryAsync(List<int> waypointIds, Profiles profile)
     {
-        if (!Enum.TryParse<Profiles>(calculateDto.Transportation, true, out var profile))
-        {
-            return null;
-        }
-
-        var waypoints = await _waypointRepository.GetByIdsAsync(calculateDto.WaypointIds);
+        var waypoints = await _waypointRepository.GetByIdsAsync(waypointIds);
         
-        var orderedWaypoints = calculateDto.WaypointIds
+        var orderedWaypoints = waypointIds
             .Select(id => waypoints.FirstOrDefault(w => w.Id == id))
             .Where(w => w != null)
             .Select(w => w!)
@@ -104,11 +84,6 @@ public class RouteService : IRouteService
             return null;
         }
 
-        var geometry = await _osrmService.CalculateGeometryAsync(orderedWaypoints, profile, OsrmServices.Route);
-
-        return new CalculateRouteResponseDto
-        {
-            Geometry = geometry
-        };
+        return await _osrmService.CalculateGeometryAsync(orderedWaypoints, profile, OsrmServices.Route);
     }
 }

@@ -2,9 +2,9 @@ using Hikr.Domain.Entities;
 using Hikr.Domain.Enums;
 using NetTopologySuite.Geometries;
 
-namespace Hikr.Application.Services;
+namespace Hikr.Application.Ports.Outbound;
 
 public interface IOsrmService
 {
-    Task<Geometry> CalculateGeometryAsync(IEnumerable<Waypoints> waypoints, Profiles profile, OsrmServices service = OsrmServices.Route);
+    Task<Geometry> CalculateGeometryAsync(List<Waypoint> waypoints, Profiles profile, OsrmServices service);
 }

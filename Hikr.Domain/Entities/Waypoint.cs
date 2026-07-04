@@ -2,7 +2,7 @@ using NetTopologySuite.Geometries;
 
 namespace Hikr.Domain.Entities;
 
-public class Waypoints
+public class Waypoint
 {
     public int Id { get; set; }
     

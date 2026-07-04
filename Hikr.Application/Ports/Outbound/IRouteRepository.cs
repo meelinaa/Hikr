@@ -1,12 +1,12 @@
 using Hikr.Domain.Entities;
 
-namespace Hikr.Application.Repositories;
+namespace Hikr.Application.Ports.Outbound;
 
 public interface IRouteRepository
 {
-    Task<IEnumerable<Routes>> GetAllAsync();
-    Task<Routes?> GetByIdAsync(int id);
-    Task<Routes> AddAsync(Routes route);
-    Task UpdateAsync(Routes route);
+    Task<IEnumerable<Route>> GetAllAsync();
+    Task<Route?> GetByIdAsync(int id);
+    Task<Route> AddAsync(Route route);
+    Task UpdateAsync(Route route);
     Task DeleteAsync(int id);
 }

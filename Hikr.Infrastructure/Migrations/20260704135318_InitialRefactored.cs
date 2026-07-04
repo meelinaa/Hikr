@@ -1,5 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+using NetTopologySuite.Geometries;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
@@ -7,24 +8,44 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Hikr.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class UpdateRoutesAndWaypoints : Migration
+    public partial class InitialRefactored : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "WaypointIds",
-                table: "Routes");
+            migrationBuilder.AlterDatabase()
+                .Annotation("Npgsql:PostgresExtension:postgis", ",,");
 
-            migrationBuilder.RenameColumn(
-                name: "GeoJson",
-                table: "Waypoints",
-                newName: "Geometry");
+            migrationBuilder.CreateTable(
+                name: "Routes",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    Transportation = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Geometry = table.Column<Geometry>(type: "geometry", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Routes", x => x.Id);
+                });
 
-            migrationBuilder.RenameColumn(
-                name: "GeoJson",
-                table: "Routes",
-                newName: "Geometry");
+            migrationBuilder.CreateTable(
+                name: "Waypoints",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Geometry = table.Column<Geometry>(type: "geometry", nullable: false),
+                    Name = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
+                    Type = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Waypoints", x => x.Id);
+                });
 
             migrationBuilder.CreateTable(
                 name: "RouteWaypoints",
@@ -70,21 +91,11 @@ namespace Hikr.Infrastructure.Migrations
             migrationBuilder.DropTable(
                 name: "RouteWaypoints");
 
-            migrationBuilder.RenameColumn(
-                name: "Geometry",
-                table: "Waypoints",
-                newName: "GeoJson");
+            migrationBuilder.DropTable(
+                name: "Routes");
 
-            migrationBuilder.RenameColumn(
-                name: "Geometry",
-                table: "Routes",
-                newName: "GeoJson");
-
-            migrationBuilder.AddColumn<List<int>>(
-                name: "WaypointIds",
-                table: "Routes",
-                type: "integer[]",
-                nullable: false);
+            migrationBuilder.DropTable(
+                name: "Waypoints");
         }
     }
 }

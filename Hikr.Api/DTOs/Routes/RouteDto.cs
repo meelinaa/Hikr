@@ -1,13 +1,13 @@
 using NetTopologySuite.Geometries;
 
-namespace Hikr.Domain.Entities;
+namespace Hikr.Api.DTOs.Routes;
 
-public class Route
+public class RouteDto
 {
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Transportation { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
-    public Geometry Geometry { get; set; } = null!;
-    public List<RouteWaypoint> RouteWaypoints { get; set; } = new();
+    public Geometry GeoJson { get; set; } = null!;
+    public List<int> WaypointIds { get; set; } = [];
 }

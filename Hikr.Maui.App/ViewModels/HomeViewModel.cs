@@ -5,11 +5,11 @@ namespace Hikr.Maui.App.ViewModels;
 
 public class RouteMock
 {
-    public string Title { get; set; }
-    public string Distance { get; set; }
-    public string Duration { get; set; }
-    public string TransportType { get; set; }
-    public string TransportIcon { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Distance { get; set; } = string.Empty;
+    public string Duration { get; set; } = string.Empty;
+    public string TransportType { get; set; } = string.Empty;
+    public string TransportIcon { get; set; } = string.Empty;
 }
 
 public class HomeViewModel

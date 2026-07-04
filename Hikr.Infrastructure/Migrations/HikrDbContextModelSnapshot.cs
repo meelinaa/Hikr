@@ -24,33 +24,7 @@ namespace Hikr.Infrastructure.Migrations
             NpgsqlModelBuilderExtensions.HasPostgresExtension(modelBuilder, "postgis");
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Hikr.Domain.Entities.RouteWaypoint", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("Order")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("RouteId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("WaypointId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RouteId");
-
-                    b.HasIndex("WaypointId");
-
-                    b.ToTable("RouteWaypoints");
-                });
-
-            modelBuilder.Entity("Hikr.Domain.Entities.Routes", b =>
+            modelBuilder.Entity("Hikr.Infrastructure.Entities.RouteEntity", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -80,7 +54,33 @@ namespace Hikr.Infrastructure.Migrations
                     b.ToTable("Routes");
                 });
 
-            modelBuilder.Entity("Hikr.Domain.Entities.Waypoints", b =>
+            modelBuilder.Entity("Hikr.Infrastructure.Entities.RouteWaypointEntity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Order")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RouteId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("WaypointId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RouteId");
+
+                    b.HasIndex("WaypointId");
+
+                    b.ToTable("RouteWaypoints");
+                });
+
+            modelBuilder.Entity("Hikr.Infrastructure.Entities.WaypointEntity", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -105,15 +105,15 @@ namespace Hikr.Infrastructure.Migrations
                     b.ToTable("Waypoints");
                 });
 
-            modelBuilder.Entity("Hikr.Domain.Entities.RouteWaypoint", b =>
+            modelBuilder.Entity("Hikr.Infrastructure.Entities.RouteWaypointEntity", b =>
                 {
-                    b.HasOne("Hikr.Domain.Entities.Routes", "Route")
+                    b.HasOne("Hikr.Infrastructure.Entities.RouteEntity", "Route")
                         .WithMany("RouteWaypoints")
                         .HasForeignKey("RouteId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Hikr.Domain.Entities.Waypoints", "Waypoint")
+                    b.HasOne("Hikr.Infrastructure.Entities.WaypointEntity", "Waypoint")
                         .WithMany("RouteWaypoints")
                         .HasForeignKey("WaypointId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -124,12 +124,12 @@ namespace Hikr.Infrastructure.Migrations
                     b.Navigation("Waypoint");
                 });
 
-            modelBuilder.Entity("Hikr.Domain.Entities.Routes", b =>
+            modelBuilder.Entity("Hikr.Infrastructure.Entities.RouteEntity", b =>
                 {
                     b.Navigation("RouteWaypoints");
                 });
 
-            modelBuilder.Entity("Hikr.Domain.Entities.Waypoints", b =>
+            modelBuilder.Entity("Hikr.Infrastructure.Entities.WaypointEntity", b =>
                 {
                     b.Navigation("RouteWaypoints");
                 });

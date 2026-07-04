@@ -1,13 +1,13 @@
 using Hikr.Domain.Entities;
 
-namespace Hikr.Application.Repositories;
+namespace Hikr.Application.Ports.Outbound;
 
 public interface IWaypointRepository
 {
-    Task<IEnumerable<Waypoints>> GetAllAsync();
-    Task<IEnumerable<Waypoints>> GetByIdsAsync(IEnumerable<int> ids);
-    Task<Waypoints?> GetByIdAsync(int id);
-    Task<Waypoints> AddAsync(Waypoints waypoint);
-    Task UpdateAsync(Waypoints waypoint);
+    Task<IEnumerable<Waypoint>> GetAllAsync();
+    Task<IEnumerable<Waypoint>> GetByIdsAsync(IEnumerable<int> ids);
+    Task<Waypoint?> GetByIdAsync(int id);
+    Task<Waypoint> AddAsync(Waypoint waypoint);
+    Task UpdateAsync(Waypoint waypoint);
     Task DeleteAsync(int id);
 }

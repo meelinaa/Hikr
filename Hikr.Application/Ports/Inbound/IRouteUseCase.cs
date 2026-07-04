@@ -1,13 +1,14 @@
-using Hikr.Application.DTOs;
+using Hikr.Domain.Entities;
+using Hikr.Domain.Enums;
 
-namespace Hikr.Application.Services;
+namespace Hikr.Application.Ports.Inbound;
 
-public interface IRouteService
+public interface IRouteUseCase
 {
-    Task<IEnumerable<RouteDto>> GetAllRoutesAsync();
-    Task<RouteDto?> GetRouteByIdAsync(int id);
-    Task<RouteDto> CreateRouteAsync(CreateRouteDto createDto);
-    Task UpdateRouteAsync(UpdateRouteDto updateDto);
+    Task<IEnumerable<Route>> GetAllRoutesAsync();
+    Task<Route?> GetRouteByIdAsync(int id);
+    Task<Route> CreateRouteAsync(Route route);
+    Task UpdateRouteAsync(Route route);
     Task DeleteRouteAsync(int id);
-    Task<CalculateRouteResponseDto?> CalculateRouteAsync(CalculateRouteDto calculateDto);
+    Task<NetTopologySuite.Geometries.Geometry?> CalculateRouteGeometryAsync(List<int> waypointIds, Profiles profile);
 }
